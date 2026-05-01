@@ -1,0 +1,616 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Basketball Game Report Generator</title>
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@400;500;700&family=Barlow+Condensed:wght@400;600;700;800&family=Barlow:wght@400;500;600&display=swap" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.js"></script>
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+:root{--hc:#1A5276;--ac:#922B21;--border:#e0e0e0;--muted:#888;--sbg:#f7f7f5;}
+body{font-family:'Barlow',sans-serif;background:#f0f0ee;color:#1a1a1a;min-height:100vh}
+.us{max-width:600px;margin:60px auto;padding:0 20px}
+.ut{font-family:'Barlow Condensed',sans-serif;font-size:28px;font-weight:800;letter-spacing:1px;text-align:center;margin-bottom:6px}
+.usub{text-align:center;font-size:13px;color:var(--muted);margin-bottom:32px}
+.ub{background:#fff;border:2px dashed #ccc;border-radius:12px;padding:48px 32px;text-align:center;cursor:pointer;transition:border-color .2s,background .2s}
+.ub:hover,.ub.drag{border-color:#1A5276;background:#EAF4FB}
+.ui{font-size:48px;margin-bottom:12px}
+.ul{font-size:15px;font-weight:600;color:#333;margin-bottom:6px}
+.uh{font-size:12px;color:var(--muted)}
+#pdf-input{display:none}
+.ts{margin-top:24px;background:#fff;border-radius:10px;padding:20px 24px}
+.tl{font-size:12px;font-weight:700;letter-spacing:1px;text-transform:uppercase;color:var(--muted);margin-bottom:12px}
+.tbs{display:flex;gap:10px}
+.tb{flex:1;padding:10px;border:2px solid var(--border);border-radius:6px;background:#fff;font-family:'Barlow Condensed',sans-serif;font-size:16px;font-weight:700;cursor:pointer;transition:all .2s}
+.tb.active{border-color:#1A5276;background:#EAF4FB;color:#1A5276}
+.pb{margin-top:16px;width:100%;padding:14px;background:#111;color:#fff;font-family:'Barlow Condensed',sans-serif;font-size:16px;font-weight:700;letter-spacing:2px;text-transform:uppercase;border:none;border-radius:6px;cursor:pointer;transition:background .2s}
+.pb:hover{background:#333}
+.pb:disabled{background:#ccc;cursor:not-allowed}
+.em{margin-top:12px;padding:12px;background:#FDEDEC;border-radius:6px;font-size:12px;color:#922B21;display:none;white-space:pre-wrap;word-break:break-all}
+.ls{display:none;max-width:600px;margin:120px auto;text-align:center;padding:0 20px}
+.lsp{width:48px;height:48px;border:4px solid #e0e0e0;border-top-color:#1A5276;border-radius:50%;animation:spin .8s linear infinite;margin:0 auto 20px}
+@keyframes spin{to{transform:rotate(360deg)}}
+.lt{font-family:'Barlow Condensed',sans-serif;font-size:18px;font-weight:600;color:#555}
+.rs{display:none;max-width:900px;margin:0 auto;padding:0 0 60px;background:#fff}
+.bb{display:block;padding:10px 24px;background:#f0f0ee;color:#555;font-family:'Barlow Condensed',sans-serif;font-size:13px;font-weight:700;letter-spacing:1px;text-transform:uppercase;border:none;cursor:pointer;width:100%;text-align:left}
+.bb:hover{background:#e0e0de}
+.gr-header{background:#fff;border-bottom:3px solid #111;padding:20px 24px 16px;display:flex;flex-direction:column;gap:6px}
+.gr-ht{display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:4px}
+.gr-to{font-size:11px;letter-spacing:1.5px;text-transform:uppercase;color:var(--muted);font-weight:600;font-family:'Barlow Condensed',sans-serif}
+.gr-ve{font-size:11px;color:var(--muted)}
+.gr-sb{display:grid;grid-template-columns:1fr auto 1fr;align-items:center;padding:12px 0 8px}
+.gr-tb{display:flex;flex-direction:column;gap:2px}
+.gr-tb.right{text-align:right}
+.gr-tn{font-family:'Noto Sans JP',sans-serif;font-size:13px;font-weight:700}
+.gr-tn.h{color:var(--hc)}.gr-tn.a{color:var(--ac)}
+.gr-ts{font-family:'Barlow Condensed',sans-serif;font-size:56px;font-weight:800;line-height:1}
+.gr-ts.h{color:var(--hc)}.gr-ts.a{color:var(--ac)}
+.gr-sep{font-family:'Barlow Condensed',sans-serif;font-size:40px;font-weight:400;color:#ccc;text-align:center;padding:0 16px}
+.gr-q{display:flex;gap:10px}
+.gr-q span{font-family:'Barlow Condensed',sans-serif;font-size:12px;font-weight:600;color:var(--muted)}
+.gr-q.right{justify-content:flex-end}
+.gr-wb{display:inline-block;background:#111;color:#fff;font-size:9px;font-weight:700;letter-spacing:1px;padding:2px 8px;text-transform:uppercase;border-radius:2px;margin-top:4px}
+.gr-lg{display:flex;gap:20px;font-size:11px;color:var(--muted);margin-top:6px;flex-wrap:wrap}
+.gr-li{display:flex;align-items:center;gap:5px}
+.gr-ld{width:10px;height:10px;border-radius:2px}
+.gr-sec{padding:0 24px;margin-top:24px}
+.gr-st{font-family:'Barlow Condensed',sans-serif;font-size:13px;font-weight:700;letter-spacing:2px;text-transform:uppercase;color:var(--muted);border-bottom:1px solid var(--border);padding-bottom:6px;margin-bottom:14px}
+.gr-rows{display:flex;flex-direction:column;gap:8px}
+.gr-row{display:grid;grid-template-columns:90px 1fr 90px;align-items:center;gap:8px}
+.gr-sv{font-family:'Barlow Condensed',sans-serif;font-size:18px;font-weight:700;line-height:1}
+.gr-sv.h{color:var(--hc);text-align:right}.gr-sv.a{color:var(--ac)}
+.gr-slw{display:flex;flex-direction:column;align-items:center;gap:3px}
+.gr-sl{font-size:10px;font-weight:600;letter-spacing:0.8px;text-transform:uppercase;color:var(--muted)}
+.gr-bw{width:100%;height:6px;background:var(--border);border-radius:3px;display:flex;overflow:hidden}
+.gr-bh{background:var(--hc);border-radius:3px 0 0 3px}.gr-ba{background:var(--ac);border-radius:0 3px 3px 0}
+.gr-fn{font-size:9px;color:#bbb}
+.gr-fg{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.gr-fc{background:var(--sbg);border-radius:8px;padding:12px 14px}
+.gr-fct{font-size:10px;font-weight:700;letter-spacing:1px;text-transform:uppercase;color:var(--muted);margin-bottom:8px}
+.gr-fcv{display:flex;justify-content:space-between;align-items:center}
+.gr-fn2{font-family:'Barlow Condensed',sans-serif;font-size:28px;font-weight:800}
+.gr-fn2.h{color:var(--hc)}.gr-fn2.a{color:var(--ac)}
+.gr-fbw{height:8px;background:var(--border);border-radius:4px;display:flex;overflow:hidden;margin-top:6px}
+.gr-sd{display:grid;grid-template-columns:1fr 1fr;gap:16px}
+.gr-sc{display:flex;flex-direction:column;gap:6px}
+.gr-sh{font-size:11px;font-weight:700;margin-bottom:4px}
+.gr-sh.h{color:var(--hc)}.gr-sh.a{color:var(--ac)}
+.gr-sbr{display:flex;align-items:center;gap:6px}
+.gr-sty{font-size:10px;color:var(--muted);width:28px;text-align:right}
+.gr-sbb{flex:1;height:14px;background:var(--border);border-radius:3px;overflow:hidden}
+.gr-sf{height:100%;border-radius:3px;display:flex;align-items:center;padding-left:5px}
+.gr-sf span{font-size:9px;font-weight:700;color:#fff;white-space:nowrap}
+.gr-sp{font-size:10px;color:var(--muted);width:32px}
+.gr-sg{display:grid;grid-template-columns:repeat(3,1fr);gap:10px}
+.gr-scard{background:var(--sbg);border-radius:8px;padding:10px 12px;text-align:center}
+.gr-sct{font-size:9px;font-weight:700;letter-spacing:0.8px;text-transform:uppercase;color:var(--muted);margin-bottom:6px}
+.gr-sns{display:flex;justify-content:center;gap:16px;align-items:baseline}
+.gr-sn{font-family:'Barlow Condensed',sans-serif;font-size:26px;font-weight:800}
+.gr-sn.h{color:var(--hc)}.gr-sn.a{color:var(--ac)}
+.gr-sbr2{display:flex;height:5px;background:var(--border);border-radius:3px;overflow:hidden;margin-top:6px}
+.gr-sbh{background:var(--hc)}.gr-sba{background:var(--ac)}
+.gr-flg{display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px}
+.gr-flc{background:var(--sbg);border-radius:8px;padding:10px 12px}
+.gr-flt{font-size:9px;font-weight:700;letter-spacing:0.8px;text-transform:uppercase;color:var(--muted);margin-bottom:6px}
+.gr-flv{font-family:'Barlow Condensed',sans-serif;font-size:22px;font-weight:800;color:#111}
+.gr-flv.h{color:var(--hc)}.gr-flv.a{color:var(--ac)}
+.gr-fls{font-size:10px;color:var(--muted);margin-top:2px}
+.gr-fl2{display:flex;gap:12px;align-items:baseline}
+.gr-bx{overflow-x:auto}
+table.gr-box{width:100%;border-collapse:collapse;font-size:11px}
+table.gr-box th{font-family:'Barlow Condensed',sans-serif;font-size:10px;font-weight:700;letter-spacing:0.5px;text-transform:uppercase;padding:5px 6px;color:var(--muted);border-bottom:1px solid var(--border);text-align:right;white-space:nowrap}
+table.gr-box th:first-child{text-align:left}
+table.gr-box td{padding:5px 6px;border-bottom:0.5px solid #f0f0f0;text-align:right;font-family:'Barlow Condensed',sans-serif;font-size:12px;white-space:nowrap}
+table.gr-box td:first-child{text-align:left;font-family:'Noto Sans JP',sans-serif;font-size:10px;font-weight:500}
+table.gr-box tr.starter td:first-child::before{content:'▶ ';color:var(--muted);font-size:8px}
+table.gr-box tr.tcr td{font-size:11px;color:var(--muted);background:#fafafa;font-style:italic;border-bottom:0.5px solid #e8e8e8}
+table.gr-box tr.totr td{font-weight:700;border-top:1.5px solid #ccc;border-bottom:none;background:var(--sbg)}
+.gr-tth{font-family:'Noto Sans JP',sans-serif;font-size:12px;font-weight:700;padding:10px 0 4px;margin-top:12px}
+.gr-tth.h{color:var(--hc)}.gr-tth.a{color:var(--ac)}
+@media(max-width:600px){
+  .gr-ts{font-size:36px}.gr-fg{grid-template-columns:1fr}
+  .gr-sg{grid-template-columns:1fr 1fr}.gr-flg{grid-template-columns:1fr 1fr}
+  .gr-sd{grid-template-columns:1fr}.gr-row{grid-template-columns:65px 1fr 65px}.gr-sv{font-size:14px}
+}
+</style>
+</head>
+<body>
+<div class="us" id="upload-screen">
+  <div class="ut">Game Report Generator</div>
+  <div class="usub">FIBA Box Score PDFをアップロードして自動でレポートを生成します</div>
+  <div class="ub" id="upload-box" onclick="document.getElementById('pdf-input').click()">
+    <div class="ui">📄</div>
+    <div class="ul" id="upload-label">PDFをここにドロップ または クリックして選択</div>
+    <div class="uh">FIBA形式のBox Score PDFに対応</div>
+    <input type="file" id="pdf-input" accept=".pdf">
+  </div>
+  <div class="ts">
+    <div class="tl">試合時間（1クォーター）</div>
+    <div class="tbs">
+      <button class="tb" id="btn-8" onclick="setTime(8)">8分</button>
+      <button class="tb active" id="btn-10" onclick="setTime(10)">10分</button>
+    </div>
+  </div>
+  <button class="pb" id="parse-btn" onclick="startParsing()" disabled>レポートを生成する</button>
+  <div class="em" id="error-msg"></div>
+</div>
+<div class="ls" id="loading-screen">
+  <div class="lsp"></div>
+  <div class="lt">PDFを解析中...</div>
+</div>
+<div class="rs" id="report-screen">
+  <button class="bb" onclick="resetApp()">← 別のPDFを読み込む</button>
+  <div id="gr-report"></div>
+</div>
+<script>
+pdfjsLib.GlobalWorkerOptions.workerSrc='https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';
+let selectedFile=null,gameMinutes=10,currentChart=null;
+
+document.getElementById('pdf-input').addEventListener('change',e=>{
+  if(e.target.files[0]){
+    selectedFile=e.target.files[0];
+    document.getElementById('upload-label').textContent=selectedFile.name;
+    document.getElementById('parse-btn').disabled=false;
+    document.getElementById('error-msg').style.display='none';
+  }
+});
+const ub=document.getElementById('upload-box');
+ub.addEventListener('dragover',e=>{e.preventDefault();ub.classList.add('drag');});
+ub.addEventListener('dragleave',()=>ub.classList.remove('drag'));
+ub.addEventListener('drop',e=>{
+  e.preventDefault();ub.classList.remove('drag');
+  const f=e.dataTransfer.files[0];
+  if(f&&f.type==='application/pdf'){
+    selectedFile=f;
+    document.getElementById('upload-label').textContent=f.name;
+    document.getElementById('parse-btn').disabled=false;
+    document.getElementById('error-msg').style.display='none';
+  }
+});
+function setTime(m){
+  gameMinutes=m;
+  document.getElementById('btn-8').classList.toggle('active',m===8);
+  document.getElementById('btn-10').classList.toggle('active',m===10);
+}
+function resetApp(){
+  selectedFile=null;
+  document.getElementById('upload-label').textContent='PDFをここにドロップ または クリックして選択';
+  document.getElementById('parse-btn').disabled=true;
+  document.getElementById('pdf-input').value='';
+  document.getElementById('error-msg').style.display='none';
+  document.getElementById('upload-screen').style.display='block';
+  document.getElementById('report-screen').style.display='none';
+  document.getElementById('loading-screen').style.display='none';
+  if(currentChart){currentChart.destroy();currentChart=null;}
+}
+function showError(msg){
+  const el=document.getElementById('error-msg');
+  el.textContent=msg;el.style.display='block';
+  document.getElementById('upload-screen').style.display='block';
+  document.getElementById('loading-screen').style.display='none';
+}
+
+// ============================================================
+// PDF.js でX座標付きワードを取得
+// ============================================================
+async function startParsing(){
+  if(!selectedFile)return;
+  document.getElementById('upload-screen').style.display='none';
+  document.getElementById('loading-screen').style.display='block';
+  try{
+    const ab=await selectedFile.arrayBuffer();
+    const pdf=await pdfjsLib.getDocument({data:ab}).promise;
+    const page=await pdf.getPage(1);
+    const content=await page.getTextContent();
+
+    // アイテムをY座標でグループ化（行）、X座標でソート
+    const rowMap={};
+    content.items.forEach(item=>{
+      const y=Math.round(item.transform[5]*10)/10; // 小数1桁で丸める
+      if(!rowMap[y])rowMap[y]=[];
+      rowMap[y].push({x:item.transform[4], str:item.str.replace(/\u200b/g,'').trim()});
+    });
+    // Y降順（上から下）にソートした行配列
+    const rows=Object.keys(rowMap).map(Number).sort((a,b)=>b-a).map(y=>({
+      y,
+      words:rowMap[y].sort((a,b)=>a.x-b.x).filter(w=>w.str!=='')
+    }));
+
+    const gameData=parseFIBA(rows);
+    if(!gameData){showError('解析に失敗しました。FIBA形式のBox Score PDFか確認してください。');return;}
+    document.getElementById('loading-screen').style.display='none';
+    document.getElementById('report-screen').style.display='block';
+    renderReport(gameData);
+  }catch(err){
+    showError('エラー:\n'+err.message);
+  }
+}
+
+// ============================================================
+// X座標列定義（pdfplumberで実測した値）
+// ============================================================
+const COL_X={or:393.9,dr:409.8,tot:427.8,ast:445.8,to:461.3,stl:476.6,blk:491.9,pf:506.6,fd:520.7,pm:535.1,pts:551.0};
+const TOL=7; // ±7px
+
+function getColVal(words,col){
+  const cx=COL_X[col];
+  const found=words.filter(w=>Math.abs(w.x-cx)<=TOL);
+  if(!found.length)return 0;
+  const v=parseInt(found[0].str);
+  return isNaN(v)?0:v;
+}
+function getMAs(words){
+  // x<390 の範囲でM/A形式を探す（FG,2P,3P,FTの4つ）
+  return words.filter(w=>w.str.includes('/')&&w.x<390).sort((a,b)=>a.x-b.x);
+}
+function parseMA(str){
+  const m=str.match(/(\d+)\/(\d+)/);
+  return m?{m:+m[1],a:+m[2]}:{m:0,a:0};
+}
+
+// ============================================================
+// PARSER
+// ============================================================
+function parseFIBA(rows){
+  // 全行のテキスト（Y座標付き）
+  const lineTexts=rows.map(r=>({y:r.y, text:r.words.map(w=>w.str).join(' ')}));
+
+  // トーナメント名・会場
+  let tourneyName='',venueLine='';
+  for(let i=0;i<Math.min(lineTexts.length,15);i++){
+    const t=lineTexts[i].text;
+    if(!tourneyName&&(t.includes('チャンピオンシップ')||t.includes('リーグ')||t.includes('カップ')||t.includes('Championship'))){
+      tourneyName=t.replace(/FIBA.*/i,'').trim();
+    }
+    if(!venueLine&&(t.includes('アリーナ')||t.includes('体育館')||t.includes('Arena')||t.match(/,\s*(Mon|Tue|Wed|Thu|Fri|Sat|Sun)/))){
+      venueLine=t.replace(/Start time.*/i,'').replace(/Game No.*/i,'').trim();
+    }
+  }
+
+  // スコアライン
+  let homeName='',awayName='',homeScore=0,awayScore=0;
+  for(const {text} of lineTexts){
+    const stripped=text.replace(/Report Generated.*/i,'').replace(/Game No.*/i,'').trim();
+    const m=stripped.match(/^(.+?)\s+(\d+)\s*[–\-]\s*(\d+)\s+(.+)$/);
+    if(m&&+m[2]>0&&+m[3]>0&&m[1].length>2&&m[4].length>2){
+      homeName=m[1].trim();homeScore=+m[2];awayScore=+m[3];awayName=m[4].trim();
+      break;
+    }
+  }
+  if(!homeName||!homeScore)return null;
+
+  // 略称
+  let homeAbbr='HOME',awayAbbr='AWAY';
+  const fullText=lineTexts.map(l=>l.text).join('\n');
+  const am=[...fullText.matchAll(/\(([A-Z]{2,5})\)/g)].filter(m=>!['JPN','USA','AUS','KOR','CHN','CAN'].includes(m[1]));
+  if(am.length>=2){homeAbbr=am[0][1];awayAbbr=am[1][1];}
+  else if(am.length===1)homeAbbr=am[0][1];
+
+  // クォータースコア
+  let quarterScores={home:[],away:[]};
+  for(const {text} of lineTexts){
+    if(text.match(/\(\d+-\d+,\s*\d+-\d+/)){
+      [...text.matchAll(/(\d+)-(\d+)/g)].forEach(m=>{quarterScores.home.push(+m[1]);quarterScores.away.push(+m[2]);});
+      break;
+    }
+  }
+
+  // Summary Stats
+  const ss=parseSummary(fullText);
+
+  // 選手データ（X座標ベース）
+  const result=parsePlayers(rows,lineTexts,homeAbbr,awayAbbr,homeScore,awayScore);
+  if(!result.homeTotals||!result.awayTotals)return null;
+
+  return{tourneyName,venueLine,homeName,awayName,homeAbbr,awayAbbr,
+    homeScore,awayScore,quarterScores,...result,summaryStats:ss};
+}
+
+function parseSummary(text){
+  const ss={};let m;
+  m=text.match(/Points from Turnovers\s+([\d.]+)\s+([\d.]+)/);if(m)ss.pointsFromTO={home:m[1],away:m[2]};
+  m=text.match(/Points in the Paint\s+(\d+)[^\d\n]+(\d+)/);if(m)ss.pointsInPaint={home:m[1],away:m[2]};
+  m=text.match(/Second Chance Points\s+([\d.]+)\s+([\d.]+)/);if(m)ss.secondChance={home:m[1],away:m[2]};
+  m=text.match(/Fast Break Points from Turnovers\s+([\d.]+)\s+([\d.]+)/);if(m)ss.fastBreakTO={home:m[1],away:m[2]};
+  m=text.match(/Fast Break Points\s+([\d.]+)\s+([\d.]+)/);if(m)ss.fastBreak={home:m[1],away:m[2]};
+  m=text.match(/Bench Points\s+([\d.]+)\s+([\d.]+)/);if(m)ss.benchPoints={home:m[1],away:m[2]};
+  m=text.match(/Biggest Lead\s+([\d.]+)[^\d\n]+([\d.]+)/);if(m)ss.biggestLead={home:m[1],away:m[2]};
+  m=text.match(/Biggest Scoring Run\s+([\d.]+)[^\d\n]+([\d.]+)/);if(m)ss.biggestRun={home:m[1],away:m[2]};
+  m=text.match(/Points per Possession\s+([\d.]+)\s+([\d.]+)/);if(m)ss.ppp={home:m[1],away:m[2]};
+  m=text.match(/Lead Changes\s+([\d.]+)/);if(m)ss.leadChanges={home:m[1]};
+  m=text.match(/Times Tied\s+([\d.]+)/);if(m)ss.timesTied={home:m[1]};
+  m=text.match(/Time with Lead\s+([\d:]+)\s+([\d:]+)/);if(m)ss.timeWithLead={home:m[1],away:m[2]};
+  return ss;
+}
+
+function parsePlayers(rows,lineTexts,homeAbbr,awayAbbr,homeScore,awayScore){
+  const homePlayers=[],awayPlayers=[];
+  let homeTC={or:0,dr:0,tot:0,to:0,pf:0},awayTC={or:0,dr:0,tot:0,to:0,pf:0};
+  let homeTotals=null,awayTotals=null,section=null;
+  const hk='('+homeAbbr+')',ak='('+awayAbbr+')';
+  let hFound=false,aFound=false;
+
+  for(let i=0;i<rows.length;i++){
+    const row=rows[i];
+    const words=row.words;
+    const text=words.map(w=>w.str).join(' ');
+    if(!text.trim())continue;
+
+    // チームセクション検出
+    if(!hFound&&text.includes(hk)){section='home';hFound=true;continue;}
+    if(hFound&&!aFound&&text.includes(ak)){section='away';aFound=true;continue;}
+    if(!section)continue;
+
+    if(text.includes('DNP'))continue;
+    if(text.match(/^(No |Field|M\/A|Coach|Assistant|Legend|EF |Scoring)/))continue;
+    if(text.match(/^(Points from|Second Chance|Fast Break|Bench Points|Biggest|Lead Changes|Times Tied|Time with)/))break;
+
+    // Team/Coach行
+    if(text.match(/^Team/i)){
+      const tc={
+        or:getColVal(words,'or'),dr:getColVal(words,'dr'),tot:getColVal(words,'tot'),
+        to:getColVal(words,'to'),pf:getColVal(words,'pf')
+      };
+      if(section==='home')homeTC=tc;else awayTC=tc;
+      continue;
+    }
+
+    // Totals行
+    if(text.match(/^Totals/i)){
+      const mas=getMAs(words);
+      if(mas.length>=4){
+        const[fg,p2,p3,ft]=mas.map(w=>parseMA(w.str));
+        const tot={
+          fgm:fg.m,fga:fg.a,fg2m:p2.m,fg2a:p2.a,fg3m:p3.m,fg3a:p3.a,ftm:ft.m,fta:ft.a,
+          oreb:getColVal(words,'or'),dreb:getColVal(words,'dr'),treb:getColVal(words,'tot'),
+          ast:getColVal(words,'ast'),to:getColVal(words,'to'),stl:getColVal(words,'stl'),
+          blk:getColVal(words,'blk'),pf:getColVal(words,'pf'),
+          pts:section==='home'?homeScore:awayScore
+        };
+        if(section==='home')homeTotals=tot;else awayTotals=tot;
+      }
+      continue;
+    }
+
+    // 選手行: 行の最初のワードが背番号（数字 or *数字）
+    const firstWord=words[0];
+    if(!firstWord)continue;
+    const noStr=firstWord.str.replace('*','');
+    if(!noStr.match(/^\d+$/)||firstWord.x>50)continue;
+
+    // DNP除外済み、M/Aが4つあれば選手行
+    const mas=getMAs(words);
+    if(mas.length<4)continue;
+    const[fg,p2,p3,ft]=mas.map(w=>parseMA(w.str));
+
+    // 名前: 背番号の次からMIN(MM:SS形式)の前まで
+    const minWord=words.find(w=>w.str.match(/^\d{1,2}:\d{2}$/));
+    const nameWords=words.filter(w=>w.x>firstWord.x&&(!minWord||w.x<minWord.x)&&!w.str.match(/^\d{1,2}:\d{2}$/));
+    const name=nameWords.map(w=>w.str).join(' ').trim();
+    const min=minWord?minWord.str:'0:00';
+    const star=firstWord.str.startsWith('*')||words[0].str.includes('*');
+
+    const p={
+      no:noStr,name,star,min,
+      fgm:fg.m,fga:fg.a,fg2m:p2.m,fg2a:p2.a,fg3m:p3.m,fg3a:p3.a,ftm:ft.m,fta:ft.a,
+      or:getColVal(words,'or'),dr:getColVal(words,'dr'),tot:getColVal(words,'tot'),
+      ast:getColVal(words,'ast'),to:getColVal(words,'to'),stl:getColVal(words,'stl'),
+      blk:getColVal(words,'blk'),pf:getColVal(words,'pf'),
+      pm:getColVal(words,'pm'),pts:getColVal(words,'pts')
+    };
+    // pm符号
+    const pmWord=words.find(w=>Math.abs(w.x-COL_X.pm)<=TOL);
+    if(pmWord)p.pmStr=(pmWord.str.startsWith('-')?'':'+')+(parseInt(pmWord.str)||0);
+    else p.pmStr=(p.pm>=0?'+':'')+p.pm;
+
+    if(section==='home')homePlayers.push(p);else awayPlayers.push(p);
+  }
+  return{homePlayers,awayPlayers,homeTeamCoach:homeTC,awayTeamCoach:awayTC,homeTotals,awayTotals};
+}
+
+// ============================================================
+// RENDER
+// ============================================================
+function renderReport(data){
+  const container=document.getElementById('gr-report');
+  container.innerHTML='';
+  const H=data.homeTotals,A=data.awayTotals;
+  const hS=data.homeScore,aS=data.awayScore;
+  const totalMin=gameMinutes*4,minPlayed=160;
+  const hP=H.fga+H.to+H.fta*0.44,aP=A.fga+A.to+A.fta*0.44;
+  const PACE=totalMin*((hP+aP)/(2*(minPlayed/5)));
+  const hPPP=hS/hP,aPPP=aS/aP;
+  const hEFG=(H.fgm+0.5*H.fg3m)/H.fga*100,aEFG=(A.fgm+0.5*A.fg3m)/A.fga*100;
+  const hTO=H.to/(H.fga+0.44*H.fta+H.to)*100,aTO=A.to/(A.fga+0.44*A.fta+A.to)*100;
+  const hFTR=H.fta/H.fga*100,aFTR=A.fta/A.fga*100;
+  const hOR=H.oreb/(H.oreb+A.dreb)*100,aOR=A.oreb/(A.oreb+H.dreb)*100;
+  const hEFF=(hS+H.treb+H.ast+H.stl+H.blk)-((H.fga-H.fgm)+(H.fta-H.ftm)+H.to);
+  const aEFF=(aS+A.treb+A.ast+A.stl+A.blk)-((A.fga-A.fgm)+(A.fta-A.ftm)+A.to);
+  const HC='#1A5276',AC='#922B21',hWin=hS>aS,ss=data.summaryStats||{};
+  function bw(r,t){return Math.max(2,Math.min(98,r/(r+t||1)*100)).toFixed(1);}
+  function dim(b){return b?'':'opacity:0.4';}
+
+  let html=`<div class="gr-header">
+    <div class="gr-ht"><span class="gr-to">${data.tourneyName||'Game Report'}</span><span class="gr-ve">${data.venueLine||''}</span></div>
+    <div class="gr-sb">
+      <div class="gr-tb">
+        <div class="gr-tn h">${data.homeName}</div><div class="gr-ts h">${hS}</div>
+        ${hWin?'<div class="gr-wb">WIN</div>':'<div style="height:18px"></div>'}
+        <div class="gr-q">${data.quarterScores.home.map(q=>`<span>${q}</span>`).join('')}</div>
+      </div>
+      <div class="gr-sep">–</div>
+      <div class="gr-tb right">
+        <div class="gr-tn a">${data.awayName}</div><div class="gr-ts a">${aS}</div>
+        ${!hWin?'<div class="gr-wb">WIN</div>':'<div style="height:18px"></div>'}
+        <div class="gr-q right">${data.quarterScores.away.map(q=>`<span>${q}</span>`).join('')}</div>
+      </div>
+    </div>
+    <div class="gr-lg">
+      <div class="gr-li"><div class="gr-ld" style="background:${HC}"></div>${data.homeAbbr} = ${data.homeName}</div>
+      <div class="gr-li"><div class="gr-ld" style="background:${AC}"></div>${data.awayAbbr} = ${data.awayName}</div>
+    </div>
+  </div>`;
+
+  const adv=[
+    {lb:'EFF',rv:hEFF.toFixed(0),tv:aEFF.toFixed(0),rn:hEFF,tn:aEFF,inv:false,f:'(PTS+REB+AST+STL+BLK)−(Miss+TO)'},
+    {lb:'POSS',rv:hP.toFixed(1),tv:aP.toFixed(1),rn:hP,tn:aP,inv:false,f:'FGA + TO + (FTA×0.44)'},
+    {lb:'PPP',rv:hPPP.toFixed(3),tv:aPPP.toFixed(3),rn:hPPP,tn:aPPP,inv:false,f:'PTS ÷ POSS'},
+    {lb:'PACE',rv:PACE.toFixed(1),tv:PACE.toFixed(1),rn:1,tn:1,inv:false,f:`${totalMin}×((POSS_H+POSS_A)÷(2×(Min÷5)))`},
+    {lb:'eFG%',rv:hEFG.toFixed(1)+'%',tv:aEFG.toFixed(1)+'%',rn:hEFG,tn:aEFG,inv:false,f:'(FGM+0.5×3PM)÷FGA'},
+    {lb:'TO%',rv:hTO.toFixed(1)+'%',tv:aTO.toFixed(1)+'%',rn:hTO,tn:aTO,inv:true,f:'TO÷(FGA+0.44×FTA+TO)'},
+    {lb:'FTR',rv:hFTR.toFixed(1)+'%',tv:aFTR.toFixed(1)+'%',rn:hFTR,tn:aFTR,inv:false,f:'FTA÷FGA'},
+    {lb:'OREB%',rv:hOR.toFixed(1)+'%',tv:aOR.toFixed(1)+'%',rn:hOR,tn:aOR,inv:false,f:'OR÷(OR+相手DR)'},
+  ];
+  html+=`<div class="gr-sec"><div class="gr-st">Advanced Stats Comparison</div><div class="gr-rows">`;
+  adv.forEach(s=>{
+    const rn=parseFloat(s.rn),tn=parseFloat(s.tn);
+    const w=s.lb==='PACE'?50:parseFloat(bw(rn,tn));
+    const rb=s.inv?rn<=tn:rn>=tn,tb=s.inv?tn<=rn:tn>=rn;
+    html+=`<div class="gr-row">
+      <div class="gr-sv h" style="${dim(rb)}">${s.rv}</div>
+      <div class="gr-slw"><span class="gr-sl">${s.lb}</span>
+        <div class="gr-bw"><div class="gr-bh" style="width:${w}%"></div><div class="gr-ba" style="width:${100-w}%"></div></div>
+        <span class="gr-fn">${s.f}</span></div>
+      <div class="gr-sv a" style="${dim(tb)}">${s.tv}</div>
+    </div>`;
+  });
+  html+=`</div></div>`;
+
+  const ff=[
+    {t:'eFG%  シュート効率',rv:hEFG.toFixed(1)+'%',tv:aEFG.toFixed(1)+'%',rn:hEFG,tn:aEFG,inv:false},
+    {t:'TO%  ターンオーバー率',rv:hTO.toFixed(1)+'%',tv:aTO.toFixed(1)+'%',rn:hTO,tn:aTO,inv:true},
+    {t:'OREB%  オフェンスRB率',rv:hOR.toFixed(1)+'%',tv:aOR.toFixed(1)+'%',rn:hOR,tn:aOR,inv:false},
+    {t:'FTR  フリースロー取得率',rv:hFTR.toFixed(1)+'%',tv:aFTR.toFixed(1)+'%',rn:hFTR,tn:aFTR,inv:false},
+  ];
+  html+=`<div class="gr-sec"><div class="gr-st">Four Factors</div><div class="gr-fg">`;
+  ff.forEach(f=>{
+    const w=parseFloat(bw(f.rn,f.tn)),rb=f.inv?f.rn<f.tn:f.rn>=f.tn;
+    html+=`<div class="gr-fc"><div class="gr-fct">${f.t}</div>
+      <div class="gr-fcv"><div class="gr-fn2 h" style="${dim(rb)}">${f.rv}</div>
+        <div style="font-size:10px;color:#ccc">vs</div>
+        <div class="gr-fn2 a" style="${dim(!rb)}">${f.tv}</div></div>
+      <div class="gr-fbw">
+        <div style="width:${w}%;background:${HC};border-radius:4px 0 0 4px"></div>
+        <div style="width:${100-w}%;background:${AC};border-radius:0 4px 4px 0"></div>
+      </div></div>`;
+  });
+  html+=`</div></div>`;
+
+  function shotCol(t,color,label,cls){
+    const tA=(t.fg3a||0)+(t.fg2a||0)+(t.fta||0),tM=(t.fg3m||0)+(t.fg2m||0)+(t.ftm||0);
+    let h=`<div class="gr-sc"><div class="gr-sh ${cls}">${label} — 試投数</div>`;
+    [{tp:'3PA',v:t.fg3a||0},{tp:'2PA',v:t.fg2a||0},{tp:'FTA',v:t.fta||0}].forEach(({tp,v})=>{
+      const p=tA?(v/tA*100).toFixed(0):0;
+      h+=`<div class="gr-sbr"><div class="gr-sty">${tp}</div><div class="gr-sbb"><div class="gr-sf" style="width:${p}%;background:${color}"><span>${v}本</span></div></div><div class="gr-sp">${p}%</div></div>`;
+    });
+    h+=`<div class="gr-sh ${cls}" style="margin-top:10px">${label} — 成功数</div>`;
+    [{tp:'3PM',v:t.fg3m||0},{tp:'2PM',v:t.fg2m||0},{tp:'FTM',v:t.ftm||0}].forEach(({tp,v})=>{
+      const p=tM?(v/tM*100).toFixed(0):0;
+      h+=`<div class="gr-sbr"><div class="gr-sty">${tp}</div><div class="gr-sbb"><div class="gr-sf" style="width:${p}%;background:${color}90"><span style="color:#fff">${v}本</span></div></div><div class="gr-sp">${p}%</div></div>`;
+    });
+    return h+'</div>';
+  }
+  html+=`<div class="gr-sec"><div class="gr-st">Shot Distribution — Attempts &amp; Makes</div><div class="gr-sd">`;
+  html+=shotCol(H,HC,data.homeAbbr,'h')+shotCol(A,AC,data.awayAbbr,'a');
+  html+=`</div></div>`;
+
+  const si=[
+    {t:'Points from Turnovers',hv:ss.pointsFromTO?.home||'—',av:ss.pointsFromTO?.away||'—'},
+    {t:'Points in the Paint',hv:ss.pointsInPaint?.home||'—',av:ss.pointsInPaint?.away||'—'},
+    {t:'Second Chance Points',hv:ss.secondChance?.home||'—',av:ss.secondChance?.away||'—'},
+    {t:'Fast Break Points',hv:ss.fastBreak?.home||'—',av:ss.fastBreak?.away||'—'},
+    {t:'FB from Turnovers',hv:ss.fastBreakTO?.home||'—',av:ss.fastBreakTO?.away||'—'},
+    {t:'Bench Points',hv:ss.benchPoints?.home||'—',av:ss.benchPoints?.away||'—'},
+  ];
+  html+=`<div class="gr-sec"><div class="gr-st">Scoring Breakdown</div><div class="gr-sg">`;
+  si.forEach(s=>{
+    const hv=parseInt(s.hv)||0,av=parseInt(s.av)||0,tot=hv+av||1;
+    const rw=Math.max(2,Math.min(98,hv/tot*100)).toFixed(0);
+    html+=`<div class="gr-scard"><div class="gr-sct">${s.t}</div>
+      <div class="gr-sns"><span class="gr-sn h">${s.hv}</span><span style="font-size:12px;color:#ccc">–</span><span class="gr-sn a">${s.av}</span></div>
+      <div class="gr-sbr2"><div class="gr-sbh" style="width:${rw}%"></div><div class="gr-sba" style="width:${100-rw}%"></div></div></div>`;
+  });
+  html+=`</div></div>`;
+
+  html+=`<div class="gr-sec"><div class="gr-st">Game Flow</div><div class="gr-flg">`;
+  [{t:'Biggest Lead',hv:ss.biggestLead?.home||'—',av:ss.biggestLead?.away||'—',dual:true},
+   {t:'Biggest Scoring Run',hv:ss.biggestRun?.home||'—',av:ss.biggestRun?.away||'—',dual:true},
+   {t:'PPP 得点効率',hv:hPPP.toFixed(3),av:aPPP.toFixed(3),dual:true},
+   {t:'Lead Changes',single:ss.leadChanges?.home||'—'},
+   {t:'Times Tied',single:ss.timesTied?.home||'—'},
+   {t:'Time with Lead',hv:ss.timeWithLead?.home||'—',av:ss.timeWithLead?.away||'—',dual:true},
+  ].forEach(f=>{
+    if(f.single!==undefined){
+      html+=`<div class="gr-flc"><div class="gr-flt">${f.t}</div><div class="gr-flv">${f.single}</div></div>`;
+    }else{
+      html+=`<div class="gr-flc"><div class="gr-flt">${f.t}</div><div class="gr-fl2">
+        <div><div class="gr-flv h">${f.hv}</div><div class="gr-fls" style="color:${HC}">${data.homeAbbr}</div></div>
+        <div style="color:#ddd;font-size:16px;align-self:center">vs</div>
+        <div><div class="gr-flv a">${f.av}</div><div class="gr-fls" style="color:${AC}">${data.awayAbbr}</div></div>
+      </div></div>`;
+    }
+  });
+  html+=`</div></div>`;
+
+  html+=`<div class="gr-sec"><div class="gr-st">Quarter-by-Quarter Scoring</div>
+    <div style="position:relative;width:100%;height:220px"><canvas id="gr-qc"></canvas></div></div>`;
+  html+=`<div class="gr-sec"><div class="gr-st">Box Score</div><div class="gr-bx" id="gr-bxw"></div></div>`;
+  container.innerHTML=html;
+
+  if(currentChart)currentChart.destroy();
+  const qH=data.quarterScores.home,qA=data.quarterScores.away;
+  if(qH.length>0){
+    currentChart=new Chart(document.getElementById('gr-qc'),{
+      type:'bar',
+      data:{labels:qH.map((_,i)=>`Q${i+1}`),datasets:[
+        {label:data.homeAbbr,data:qH,backgroundColor:HC,borderRadius:3},
+        {label:data.awayAbbr,data:qA,backgroundColor:AC,borderRadius:3},
+      ]},
+      options:{responsive:true,maintainAspectRatio:false,
+        plugins:{legend:{display:false},tooltip:{callbacks:{label:c=>`${c.dataset.label}: ${c.raw}pts`}}},
+        scales:{x:{grid:{display:false},ticks:{font:{family:'Barlow Condensed',size:13,weight:'700'}}},
+          y:{grid:{color:'rgba(0,0,0,0.05)'},ticks:{font:{family:'Barlow Condensed',size:11}},beginAtZero:true}}}
+    });
+  }
+
+  function calcEFF(p){return((p.pts||0)+(p.tot||0)+(p.ast||0)+(p.stl||0)+(p.blk||0))-(((p.fga||0)-(p.fgm||0))+((p.fta||0)-(p.ftm||0))+(p.to||0));}
+  function makeTable(players,tc,cls,label,totals){
+    const D='—';
+    let t=`<div class="gr-tth ${cls}">${label}</div>`;
+    t+=`<table class="gr-box"><thead><tr>
+      <th style="text-align:left">選手</th><th>MIN</th><th>FG</th><th>2P</th><th>3P</th><th>FT</th>
+      <th>OR</th><th>DR</th><th>TOT</th><th>AST</th><th>TO</th><th>STL</th><th>BLK</th><th>PF</th><th>+/-</th><th>EFF</th><th>PTS</th>
+    </tr></thead><tbody>`;
+    players.forEach(p=>{
+      const eff=calcEFF(p);
+      t+=`<tr class="${p.star?'starter':''}">
+        <td>#${p.no} ${p.name}</td>
+        <td>${p.min}</td><td>${p.fgm}/${p.fga}</td><td>${p.fg2m}/${p.fg2a}</td><td>${p.fg3m}/${p.fg3a}</td><td>${p.ftm}/${p.fta}</td>
+        <td>${p.or||0}</td><td>${p.dr||0}</td><td>${p.tot||0}</td>
+        <td>${p.ast||0}</td><td>${p.to||0}</td><td>${p.stl||0}</td><td>${p.blk||0}</td><td>${p.pf||0}</td>
+        <td>${p.pmStr||D}</td>
+        <td style="font-weight:700;color:${eff>=0?HC:AC}">${eff}</td>
+        <td style="font-weight:700">${p.pts||0}</td>
+      </tr>`;
+    });
+    t+=`<tr class="tcr"><td>Team / Coach</td><td>${D}</td><td>${D}</td><td>${D}</td><td>${D}</td><td>${D}</td>
+      <td>${tc.or}</td><td>${tc.dr}</td><td>${tc.tot}</td>
+      <td>${D}</td><td>${tc.to}</td><td>${D}</td><td>${D}</td><td>${tc.pf}</td>
+      <td>${D}</td><td>${D}</td><td>${D}</td></tr>`;
+    t+=`<tr class="totr"><td>TOTALS</td><td>${D}</td>
+      <td>${totals.fgm}/${totals.fga}</td><td>${totals.fg2m}/${totals.fg2a}</td><td>${totals.fg3m}/${totals.fg3a}</td><td>${totals.ftm}/${totals.fta}</td>
+      <td>${totals.oreb}</td><td>${totals.dreb}</td><td>${totals.treb}</td>
+      <td>${totals.ast}</td><td>${totals.to}</td><td>${totals.stl}</td><td>${totals.blk}</td><td>${totals.pf}</td>
+      <td>${D}</td><td>${D}</td><td style="font-weight:700">${totals.pts}</td>
+    </tr></tbody></table>`;
+    return t;
+  }
+  document.getElementById('gr-bxw').innerHTML=
+    makeTable(data.homePlayers,data.homeTeamCoach,'h',`${data.homeName} (${data.homeAbbr})`,H)+
+    makeTable(data.awayPlayers,data.awayTeamCoach,'a',`${data.awayName} (${data.awayAbbr})`,A);
+}
+</script>
+</body>
+</html>
