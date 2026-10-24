@@ -1,0 +1,396 @@
+<!doctype html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>新潟 vs 日立ハイテク 10.24</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@500;600;700;800&family=Zen+Kaku+Gothic+New:wght@400;500;700;900&family=IBM+Plex+Mono:wght@400;500&display=swap">
+<style>
+/* Layout: scoreboard band → takeaways → factor mirror → quarter flow → lineup +/- ledger → sub log. Home=orange left, Away=blue right throughout. */
+:root{
+  --bg:#f5f3f0; --surface:#ffffff; --ink:#1d1b19; --muted:#6e6760; --line:#e2ddd6;
+  --home:#e2591a; --home-soft:#fbe3d6; --away:#1f7a4a; --away-soft:#d9efe2;
+  --pos:#2f6fb0; --neg:#c43c3c; --warn:#a86a00; --warn-soft:#fbf0d9;
+  --band:#1d1b19; --band-ink:#f5f3f0;
+  --f-display:"Barlow Condensed","Arial Narrow",sans-serif;
+  --f-body:"Zen Kaku Gothic New","Hiragino Sans","Noto Sans JP",sans-serif;
+  --f-mono:"IBM Plex Mono",ui-monospace,Menlo,monospace;
+}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){
+  --bg:#151413; --surface:#1f1d1b; --ink:#efebe6; --muted:#a39a91; --line:#34302c;
+  --home:#ff7a3a; --home-soft:#3c2417; --away:#4cbf7f; --away-soft:#17301f;
+  --pos:#7aa9e6; --neg:#ef6b6b; --warn:#e5a93a; --warn-soft:#33281326;
+  --band:#0c0b0a; --band-ink:#efebe6; color-scheme:dark}}
+:root[data-theme="dark"]{
+  --bg:#151413; --surface:#1f1d1b; --ink:#efebe6; --muted:#a39a91; --line:#34302c;
+  --home:#ff7a3a; --home-soft:#3c2417; --away:#4cbf7f; --away-soft:#17301f;
+  --pos:#7aa9e6; --neg:#ef6b6b; --warn:#e5a93a; --warn-soft:#33281326;
+  --band:#0c0b0a; --band-ink:#efebe6; color-scheme:dark}
+*{box-sizing:border-box}
+body{background:var(--bg);color:var(--ink);font-family:var(--f-body);font-size:15px;line-height:1.7}
+.wrap{max-width:1080px;margin:0 auto;padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px))}
+.num{font-family:var(--f-display);font-variant-numeric:tabular-nums}
+.mono{font-family:var(--f-mono);font-variant-numeric:tabular-nums}
+h2{font-family:var(--f-body);font-weight:900;font-size:1.35rem;margin:0;text-wrap:balance;letter-spacing:.02em}
+.eyebrow{font-family:var(--f-display);font-weight:600;letter-spacing:.14em;text-transform:uppercase;font-size:.8rem;color:var(--muted)}
+
+/* Scoreboard */
+.board{background:var(--band);color:var(--band-ink)}
+.board .wrap{padding-block:28px 24px;display:grid;gap:18px}
+.meta{display:flex;justify-content:space-between;flex-wrap:wrap;gap:8px;font-family:var(--f-display);letter-spacing:.12em;font-size:.85rem;opacity:.75;text-transform:uppercase}
+.score{display:grid;grid-template-columns:1fr auto 1fr;align-items:center;gap:12px}
+.team{display:grid;gap:2px;min-width:0}
+.team.away{text-align:right}
+.team .name{font-weight:700;font-size:clamp(.85rem,2.4vw,1.1rem);line-height:1.35}
+.team .tag{font-family:var(--f-display);font-weight:600;letter-spacing:.14em;font-size:.75rem;text-transform:uppercase}
+.home .tag{color:var(--home)} .away .tag{color:var(--away)}
+.pts{font-family:var(--f-display);font-weight:800;font-size:clamp(4rem,14vw,8.5rem);line-height:.85;font-variant-numeric:tabular-nums}
+.home .pts{color:var(--home)} .away .pts{color:var(--away)}
+.final{font-family:var(--f-display);font-weight:700;letter-spacing:.2em;font-size:.8rem;border:1px solid currentColor;padding:4px 10px;opacity:.8;align-self:center}
+.qtable{width:100%;border-collapse:collapse;font-family:var(--f-display);font-size:1.05rem;font-variant-numeric:tabular-nums}
+.qtable th,.qtable td{padding:6px 8px;text-align:center;border-top:1px solid #ffffff1f}
+.qtable th{font-weight:600;letter-spacing:.12em;opacity:.6;font-size:.8rem;border-top:0}
+.qtable td:first-child,.qtable th:first-child{text-align:left}
+.qtable .tot{font-weight:800}
+.qtable .na{color:var(--warn);font-size:.85rem}
+.dot{display:inline-block;width:8px;height:8px;border-radius:50%;margin-right:8px;vertical-align:middle}
+
+main .wrap{padding-block:32px 56px;display:grid;gap:44px}
+section{display:grid;gap:16px}
+.sec-head{display:grid;gap:4px;border-bottom:2px solid var(--ink);padding-bottom:8px}
+.note{font-size:.85rem;color:var(--muted);margin:0}
+
+/* Takeaways */
+.takes{display:grid;grid-template-columns:repeat(auto-fit,minmax(240px,1fr));gap:1px;background:var(--line);border:1px solid var(--line)}
+.take{background:var(--surface);padding:18px 18px 16px;display:grid;gap:6px;align-content:start}
+.take .big{font-family:var(--f-display);font-weight:800;font-size:2.4rem;line-height:1;font-variant-numeric:tabular-nums}
+.take .big small{font-size:1rem;font-weight:600;color:var(--muted);margin-left:4px}
+.take h3{margin:0;font-size:1rem;font-weight:700}
+.take p{margin:0;font-size:.88rem;color:var(--muted);line-height:1.65}
+
+/* Data check */
+.check{background:var(--warn-soft);border:1px solid var(--warn);padding:14px 18px;display:grid;gap:6px;font-size:.88rem}
+.check strong{color:var(--warn);font-family:var(--f-display);letter-spacing:.12em;font-size:.85rem}
+.check ul{margin:0;padding-left:1.2em}
+
+/* Mirror bars */
+.legend{display:flex;gap:18px;flex-wrap:wrap;font-size:.85rem}
+.mirror{display:grid;gap:2px;background:var(--surface);border:1px solid var(--line);padding:10px 0}
+.mrow{display:grid;grid-template-columns:3.6rem 1fr 9.5rem 1fr 3.6rem;align-items:center;gap:10px;padding:7px 14px}
+.mrow .lab{text-align:center;font-size:.85rem;line-height:1.3}
+.mrow .lab b{display:block;font-weight:700;font-size:.9rem;color:var(--ink)}
+.mrow .lab span{color:var(--muted);font-size:.75rem}
+.mrow .v{font-family:var(--f-display);font-weight:700;font-size:1.25rem;font-variant-numeric:tabular-nums}
+.mrow .v.h{text-align:right;color:var(--home)} .mrow .v.a{color:var(--away)}
+.track{height:12px;background:var(--line);position:relative}
+.track i{position:absolute;top:0;bottom:0}
+.track.l i{right:0;background:var(--home)} .track.r i{left:0;background:var(--away)}
+.mrow.win-h .v.h::after,.mrow.win-a .v.a::before{content:"●";font-size:.5rem;vertical-align:middle;margin:0 4px}
+.mrow.flag .lab b::after{content:" ※";color:var(--warn)}
+.mgroup{padding:6px 14px 2px;font-family:var(--f-display);letter-spacing:.14em;font-size:.75rem;color:var(--muted);text-transform:uppercase;border-top:1px solid var(--line);margin-top:6px}
+.mgroup:first-child{border-top:0;margin-top:0}
+
+/* Two col */
+.two{display:grid;grid-template-columns:1fr 1fr;gap:24px}
+.two>*{min-width:0}
+.panel{background:var(--surface);border:1px solid var(--line);padding:16px;display:grid;gap:10px}
+.panel h3{margin:0;font-size:.95rem;font-weight:700}
+svg text{font-family:var(--f-display)}
+
+/* Lineups */
+.tabs{display:flex;gap:0;border:1px solid var(--line);width:max-content;max-width:100%}
+.tabs button{font:inherit;font-size:.88rem;font-weight:700;padding:8px 16px;border:0;background:var(--surface);color:var(--muted);cursor:pointer}
+.tabs button[aria-selected="true"]{background:var(--ink);color:var(--bg)}
+.tabs button:focus-visible{outline:2px solid var(--home);outline-offset:2px}
+.ledger-wrap{overflow-x:auto;border:1px solid var(--line);background:var(--surface)}
+.ledger{width:100%;border-collapse:collapse;min-width:620px;font-size:.88rem}
+.ledger th{font-family:var(--f-display);font-weight:600;letter-spacing:.1em;font-size:.75rem;color:var(--muted);text-align:left;padding:10px 12px;border-bottom:1px solid var(--line);text-transform:uppercase}
+.ledger td{padding:7px 12px;border-bottom:1px solid var(--line);vertical-align:middle}
+.ledger tr:last-child td{border-bottom:0}
+.ledger .r{text-align:right}
+.chips{display:flex;gap:4px;flex-wrap:wrap}
+.chip{font-family:var(--f-display);font-weight:700;font-size:.85rem;padding:1px 6px;border:1px solid var(--line);min-width:2.4rem;text-align:center;font-variant-numeric:tabular-nums}
+.home-c .chip{border-color:var(--home);color:var(--home)} .away-c .chip{border-color:var(--away);color:var(--away)}
+.qs{font-family:var(--f-mono);font-size:.78rem;color:var(--muted)}
+.pm{display:grid;grid-template-columns:1fr 1fr;width:160px;height:14px}
+.pm .n{display:flex;justify-content:flex-end;border-right:1px solid var(--muted)}
+.pm .n i{background:var(--neg);height:100%}
+.pm .p i{background:var(--pos);height:100%;display:block}
+.diff{font-family:var(--f-display);font-weight:800;font-size:1.05rem;font-variant-numeric:tabular-nums}
+.diff.pos{color:var(--pos)} .diff.neg{color:var(--neg)}
+.small-sample td{opacity:.62}
+
+/* Sub log */
+.subgrid{display:grid;grid-template-columns:repeat(4,1fr);gap:12px}
+.subq{background:var(--surface);border:1px solid var(--line);padding:12px;display:grid;gap:6px;align-content:start;min-width:0}
+.subq h4{margin:0;font-family:var(--f-display);font-weight:700;letter-spacing:.1em;font-size:1rem;display:flex;justify-content:space-between}
+.subq h4 span{font-size:.78rem;color:var(--muted);font-weight:600}
+.sub{display:grid;grid-template-columns:3rem 1fr;gap:6px;font-size:.78rem;line-height:1.45;padding-left:6px;border-left:3px solid var(--line)}
+.sub.home{border-left-color:var(--home)} .sub.away{border-left-color:var(--away)}
+.sub .t{font-family:var(--f-mono);color:var(--muted)}
+.sub .io{min-width:0}
+.sub .io .in{font-weight:700}
+.sub .io .out{color:var(--muted)}
+
+footer{font-size:.8rem;color:var(--muted);border-top:1px solid var(--line);padding-top:16px}
+footer dl{display:grid;grid-template-columns:max-content 1fr;gap:4px 14px;margin:8px 0 0}
+footer dt{font-family:var(--f-display);font-weight:700;letter-spacing:.06em;color:var(--ink)}
+footer dd{margin:0}
+
+@media (max-width:760px){
+  .two,.subgrid{grid-template-columns:1fr}
+  .mrow{grid-template-columns:3rem 1fr 6.6rem 1fr 3rem;gap:6px;padding:7px 10px}
+  .mrow .v{font-size:1.05rem}
+}
+@media (max-width:440px){
+  .mrow{grid-template-columns:2.8rem 1fr 5.6rem 1fr 2.8rem}
+  .mrow .lab span{display:none}
+}
+@media (prefers-reduced-motion:no-preference){
+  .track i,.pm i{transition:width .6s ease}
+}
+</style>
+<style>body{margin:0} img{max-width:100%} [hidden]{display:none!important}</style>
+</head>
+<body>
+
+
+<header class="board">
+  <div class="wrap">
+    <div class="meta"><span>Game Report</span><span>2026.10.24 SAT</span></div>
+    <div class="score">
+      <div class="team home">
+        <span class="tag">Home</span>
+        <span class="pts" id="hPts">72</span>
+        <span class="name">新潟アルビレックスBBラビッツ</span>
+      </div>
+      <span class="final">FINAL</span>
+      <div class="team away">
+        <span class="tag">Away</span>
+        <span class="pts" id="aPts">95</span>
+        <span class="name">日立ハイテククーガーズ</span>
+      </div>
+    </div>
+    <div style="overflow-x:auto">
+      <table class="qtable" id="qtable"></table>
+    </div>
+  </div>
+</header>
+
+<main>
+<div class="wrap">
+
+  <section aria-labelledby="s-take">
+    <div class="sec-head"><span class="eyebrow">Key Points</span><h2 id="s-take">この試合を決めた4つの数字</h2></div>
+    <div class="takes">
+      <div class="take">
+        <span class="big num" style="color:var(--away)">−37<small>pts / 100poss</small></span>
+        <h3>1ポゼッションあたりの効率差</h3>
+        <p>PPP は新潟 0.97、日立 1.34。ポゼッション数はほぼ同じ（74.5 と 70.9）で、点差はほぼすべて1回の攻撃の質の差から生まれた。</p>
+      </div>
+      <div class="take">
+        <span class="big num">19<small>vs</small> 12</span>
+        <h3>ターンオーバー数</h3>
+        <p>新潟の TO は19本、うち日立のスティールが11本。日立はこの TO から29点を挙げた。新潟が日立の TO 12本から得たのは18点。</p>
+      </div>
+      <div class="take">
+        <span class="big num">26<small>vs</small> 38</span>
+        <h3>リバウンド</h3>
+        <p>オフェンスリバウンドは10本と14本、ディフェンスリバウンドは16本と24本。セカンドチャンス得点も10点と14点で日立が上回った。</p>
+      </div>
+      <div class="take">
+        <span class="big num">30.8<small>%</small></span>
+        <h3>新潟の 3P 成功率（8/26）</h3>
+        <p>日立は 10/21 で 47.6%。新潟は FGA の45%を 3P に充てたが、3P の得点は24点対30点と、本数を多く打ちながら下回った。</p>
+      </div>
+    </div>
+  </section>
+
+  <section aria-labelledby="s-check">
+    <div class="check" role="note">
+      <strong>DATA NOTE</strong>
+      <span id="s-check">元の抽出データから次の点を補正しています。</span>
+      <ul>
+        <li>Q2（16-25）が抜けていたため、最終スコアを 56-70 から <b>72-95</b> に修正しました。</li>
+        <li>ボックススコアは新潟と日立が逆に入っていました。シュート欄だけでなく、リバウンド・TO・アシスト・スティールもまとめて入れ替えています。シュートだけを入れ替えるとポゼッション数が 63.5 と 81.9 になり、同じ試合の両チームとしては差が大きすぎるためです。全項目を入れ替えると 74.5 と 70.9 で整合します。</li>
+        <li>ユニット別の得失点は合計が最終スコアと一致しません（新潟ユニットの合計 89-115）。ユニット同士の相対比較として見てください。</li>
+      </ul>
+    </div>
+  </section>
+
+  <section aria-labelledby="s-factor">
+    <div class="sec-head"><span class="eyebrow">Advanced Stats</span><h2 id="s-factor">Four Factors とチームスタッツ</h2></div>
+    <div class="legend">
+      <span><i class="dot" style="background:var(--home)"></i>新潟</span>
+      <span><i class="dot" style="background:var(--away)"></i>日立ハイテク</span>
+      <span style="color:var(--muted)">● = 優位側</span>
+    </div>
+    <div class="mirror" id="mirror"></div>
+    <p class="note">POSS = FGA − ORB + 0.44×FTA + TO。PPP = 得点 ÷ POSS。TO% と失点系はスコアが低い側を優位としています。</p>
+  </section>
+
+  <section aria-labelledby="s-flow">
+    <div class="sec-head"><span class="eyebrow">Game Flow</span><h2 id="s-flow">クォーター別スコアとシュート構成</h2></div>
+    <div class="two">
+      <div class="panel">
+        <h3>クォーター別得点</h3>
+        <div id="qchart"></div>
+      </div>
+      <div class="panel">
+        <h3>得点源の内訳</h3>
+        <div id="shotchart"></div>
+      </div>
+    </div>
+    <div class="two">
+      <div class="panel">
+        <h3>試合中の局面スタッツ</h3>
+        <div id="gamestats"></div>
+      </div>
+      <div class="panel">
+        <h3>ベストラン</h3>
+        <div id="runs"></div>
+      </div>
+    </div>
+  </section>
+
+  <section aria-labelledby="s-lineup">
+    <div class="sec-head"><span class="eyebrow">Lineups</span><h2 id="s-lineup">5人ユニット別 +/−</h2></div>
+    <div class="tabs" role="tablist" aria-label="チーム切替">
+      <button role="tab" id="tab-home" aria-selected="true">新潟（25ユニット）</button>
+      <button role="tab" id="tab-away" aria-selected="false">日立ハイテク（21ユニット）</button>
+    </div>
+    <div class="ledger-wrap"><table class="ledger" id="ledger"></table></div>
+    <p class="note">出場時間順。1分未満のユニットは薄く表示しています（サンプルが小さく、数ポゼッションで値が大きく振れるため）。</p>
+    <div class="panel" id="lineupNote"></div>
+  </section>
+
+  <section aria-labelledby="s-sub">
+    <div class="sec-head"><span class="eyebrow">Substitutions</span><h2 id="s-sub">交代ログ</h2></div>
+    <div class="subgrid" id="subgrid"></div>
+  </section>
+
+  <footer>
+    元データ：FIBA Box Score からの抽出 JSON（2026年10月24日 新潟アルビレックスBBラビッツ vs 日立ハイテク）。
+    <dl>
+      <dt>eFG%</dt><dd>(FGM + 0.5×3PM) ÷ FGA</dd>
+      <dt>TO%</dt><dd>TO ÷ POSS</dd>
+      <dt>FTR</dt><dd>FTA ÷ FGA</dd>
+      <dt>ORB%</dt><dd>自チームORB ÷ (自チームORB + 相手DRB)</dd>
+    </dl>
+  </footer>
+</div>
+</main>
+
+<script>
+const D={
+ q:{home:[23,16,15,18],away:[23,25,21,26]},
+ box:{home:{pts:72,pa2:32,pm2:19,pa3:26,pm3:8,fta:17,ftm:10,orb:10,drb:16,tot:26,to:19,ast:9,stl:3,blk:1},
+      away:{pts:95,pa2:40,pm2:24,pa3:21,pm3:10,fta:27,ftm:17,orb:14,drb:24,tot:38,to:12,ast:18,stl:11,blk:1}},
+ m:{poss:{home:74.5,away:70.9},ppp:{home:.97,away:1.34},efg:{home:.534,away:.639},to:{home:.255,away:.169},ftr:{home:.293,away:.443},orb:{home:.294,away:.467}},
+ gs:{maxLead:{home:5,away:26},toPts:{home:18,away:29},second:{home:10,away:14},
+     run:{home:{pts:6,q:1,start:"02:43",end:"02:31"},away:{pts:9,q:1,start:"05:41",end:"03:33"}}},
+ lu:{home:[["10 12 22 57 7",389,18,17,"124"],["10 12 22 30 7",263,9,12,"13"],["12 22 30 5 75",167,2,8,"24"],["12 24 5 57 7",139,4,5,"2"],["10 22 57 7 75",136,3,11,"24"],["1 13 24 5 75",126,6,2,"4"],["12 22 5 57 7",103,4,8,"3"],["12 22 30 5 7",91,5,6,"123"],["10 12 24 57 7",83,4,2,"2"],["10 22 30 7 75",79,0,5,"2"],["24 5 57 7 75",78,0,3,"3"],["13 24 30 5 75",70,4,1,"4"],["10 12 13 22 30",64,3,7,"1"],["10 12 22 24 7",63,0,4,"1"],["22 30 5 7 75",62,8,4,"1"],["12 5 57 7 75",59,4,0,"3"],["1 24 5 75 8",54,0,3,"4"],["22 5 57 7 75",53,2,2,"3"],["10 24 57 7 75",53,2,0,"4"],["12 24 30 5 75",44,3,1,"2"],["10 13 24 30 75",42,0,7,"4"],["12 22 24 5 75",37,0,0,"3"],["22 24 5 7 75",32,2,5,"1"],["10 12 22 30 75",29,6,0,"1"],["10 13 24 57 75",17,0,2,"4"]],
+     away:[["11 13 14 32 45",251,12,8,"12"],["11 18 21 30 51",225,11,5,"34"],["13 14 18 51 77",196,3,9,"4"],["13 3 32 74 77",176,8,6,"3"],["11 18 21 30 45",165,6,2,"4"],["18 21 3 30 51",163,6,3,"2"],["13 3 32 45 74",126,7,7,"4"],["13 14 3 30 74",111,9,3,"2"],["11 13 18 21 51",95,4,8,"12"],["11 13 14 30 51",94,1,2,"3"],["11 14 18 21 51",78,11,2,"14"],["11 13 14 32 74",62,5,2,"2"],["13 14 32 51 77",54,3,0,"4"],["13 14 3 51 74",50,1,0,"3"],["18 21 3 30 74",49,4,4,"2"],["13 14 3 74 77",39,0,2,"3"],["14 18 21 3 51",32,5,2,"1"],["11 13 14 32 51",28,2,3,"1"],["11 13 14 51 74",28,3,0,"3"],["13 18 21 3 51",18,3,0,"2"],["11 14 21 30 51",5,0,2,"3"]]},
+ subs:[[1,"08:53","h","#11 入澤","#22 森田"],[1,"05:08","h","#57 中道","#24 鈴木"],[1,"04:05","a","#30 水野","#14 森岡"],[1,"04:05","h","#10 オモカロ マリアン","#5 デンベル"],[1,"04:05","h","#12 金沢","#75 相馬"],[1,"03:33","h","#24 鈴木","#30 高瀬"],[1,"03:33","a","#3 クエイ","#11 ファール"],[1,"02:57","a","#14 森岡","#13 池松"],[1,"02:31","h","#75 相馬","#12 金沢"],[1,"02:31","a","#18 樋口","#14 森岡"],[1,"02:31","a","#21 高田","#32 河村"],[1,"02:03","a","#51 中野","#45 粟谷"],[1,"01:47","h","#5 デンベル","#10 オモカロ マリアン"],[1,"01:33","h","#7 久井","#13 鷲尾"],[1,"00:29","h","#13 鷲尾","#75 相馬"],[1,"00:00","h","#12 金沢","#7 久井"],
+ [2,"09:24","h","#30 高瀬","#57 中道"],[2,"08:48","h","#10 オモカロ マリアン","#5 デンベル"],[2,"08:48","h","#22 森田","#12 金沢"],[2,"08:48","h","#75 相馬","#24 鈴木"],[2,"07:52","a","#45 粟谷","#74 國井"],[2,"07:16","h","#24 鈴木","#22 森田"],[2,"07:16","h","#57 中道","#30 高瀬"],[2,"06:50","h","#5 デンベル","#10 オモカロ マリアン"],[2,"06:50","a","#11 ファール","#3 クエイ"],[2,"06:50","h","#12 金沢","#75 相馬"],[2,"06:50","a","#32 河村","#30 水野"],[2,"06:07","h","#30 高瀬","#57 中道"],[2,"04:59","h","#75 相馬","#12 金沢"],[2,"04:59","a","#13 池松","#18 樋口"],[2,"04:59","a","#14 森岡","#21 高田"],[2,"04:21","h","#22 森田","#24 鈴木"],[2,"04:10","a","#74 國井","#51 中野"],[2,"02:58","h","#10 オモカロ マリアン","#5 デンベル"],[2,"02:11","h","#7 久井","#30 高瀬"],[2,"02:11","h","#57 中道","#75 相馬"],[2,"01:27","h","#24 鈴木","#22 森田"],[2,"01:27","a","#30 水野","#13 池松"],[2,"01:09","a","#3 クエイ","#11 ファール"],
+ [3,"10:00","h","#75 相馬","#7 久井"],[3,"10:00","h","#5 デンベル","#10 オモカロ マリアン"],[3,"10:00","a","#51 中野","#30 水野"],[3,"10:00","a","#13 池松","#51 中野"],[3,"08:06","h","#30 高瀬","#57 中道"],[3,"08:06","h","#57 中道","#30 高瀬"],[3,"06:32","a","#18 樋口","#14 森岡"],[3,"06:27","a","#21 高田","#13 池松"],[3,"05:51","h","#10 オモカロ マリアン","#5 デンベル"],[3,"05:30","h","#7 久井","#24 鈴木"],[3,"05:30","h","#30 高瀬","#75 相馬"],[3,"04:53","h","#12 金沢","#7 久井"],[3,"04:53","h","#22 森田","#57 中道"],[3,"04:53","a","#30 水野","#74 國井"],[3,"04:25","a","#11 ファール","#3 クエイ"],[3,"03:35","a","#51 中野","#77 栗林"],[3,"03:35","h","#24 鈴木","#12 金沢"],[3,"02:56","a","#14 森岡","#32 河村"],[3,"02:36","h","#75 相馬","#22 森田"],[3,"01:36","h","#12 金沢","#75 相馬"],[3,"00:43","h","#75 相馬","#12 金沢"],
+ [4,"10:00","h","#5 デンベル","#10 オモカロ マリアン"],[4,"10:00","a","#77 栗林","#45 粟谷"],[4,"07:54","a","#3 クエイ","#11 ファール"],[4,"07:54","a","#13 池松","#18 樋口"],[4,"07:54","a","#32 河村","#21 高田"],[4,"07:54","a","#74 國井","#30 水野"],[4,"07:54","h","#12 金沢","#75 相馬"],[4,"07:22","h","#7 久井","#5 デンベル"],[4,"07:22","h","#10 オモカロ マリアン","#12 金沢"],[4,"07:22","h","#57 中道","#30 高瀬"],[4,"06:02","h","#5 デンベル","#7 久井"],[4,"06:02","h","#12 金沢","#10 オモカロ マリアン"],[4,"06:02","h","#22 森田","#24 鈴木"],[4,"06:02","h","#30 高瀬","#57 中道"],[4,"05:09","h","#7 久井","#13 鷲尾"],[4,"05:09","a","#45 粟谷","#51 中野"],[4,"04:52","a","#30 水野","#14 森岡"],[4,"04:52","h","#57 中道","#30 高瀬"],[4,"04:10","h","#10 オモカロ マリアン","#5 デンベル"],[4,"04:10","a","#21 高田","#77 栗林"],[4,"04:10","a","#11 ファール","#13 池松"],[4,"03:00","h","#30 高瀬","#1 長谷川"],[4,"00:54","h","#13 鷲尾","#8 伊藤"],[4,"00:54","a","#18 樋口","#32 河村"]]
+};
+const $=s=>document.querySelector(s);
+const esc=s=>String(s).replace(/[&<>"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
+
+/* Quarter table */
+(()=>{const h=D.q.home,a=D.q.away;const cell=v=>v===0?'<td class="na">—</td>':`<td>${v}</td>`;
+$('#qtable').innerHTML=`<thead><tr><th></th><th>Q1</th><th>Q2</th><th>Q3</th><th>Q4</th><th>TOTAL</th></tr></thead>
+<tbody><tr><td><i class="dot" style="background:var(--home)"></i>新潟</td>${h.map(cell).join('')}<td class="tot" style="color:var(--home)">72</td></tr>
+<tr><td><i class="dot" style="background:var(--away)"></i>日立ハイテク</td>${a.map(cell).join('')}<td class="tot" style="color:var(--away)">95</td></tr></tbody>`;})();
+
+/* Mirror bars */
+(()=>{const B=D.box,M=D.m;
+const fg=t=>(B[t].pm2+B[t].pm3)/(B[t].pa2+B[t].pa3), p3=t=>B[t].pm3/B[t].pa3, ft=t=>B[t].ftm/B[t].fta;
+const pct=v=>(v*100).toFixed(1), raw=v=>String(v);
+const rows=[
+ ["Four Factors"],
+ ["eFG%","シュート効率",M.efg.home,M.efg.away,pct,1,false,.8],
+ ["TO%","ミス率",M.to.home,M.to.away,pct,-1,false,.3],
+ ["ORB%","オフェンスリバウンド",M.orb.home,M.orb.away,pct,1,false,.6],
+ ["FTR","FT獲得率",M.ftr.home,M.ftr.away,pct,1,false,.6],
+ ["Efficiency"],
+ ["PPP","1ポゼッション得点",M.ppp.home,M.ppp.away,v=>v.toFixed(2),1,false,1.5],
+ ["POSS","ポゼッション数",M.poss.home,M.poss.away,v=>v.toFixed(1),0,false,90],
+ ["Shooting"],
+ ["FG%","フィールドゴール",fg('home'),fg('away'),pct,1,false,.8],
+ ["3P%","3ポイント",p3('home'),p3('away'),pct,1,false,.8],
+ ["FT%","フリースロー",ft('home'),ft('away'),pct,1,false,1],
+ ["Box"],
+ ["REB","リバウンド",B.home.tot,B.away.tot,raw,1,false,45],
+ ["AST","アシスト",B.home.ast,B.away.ast,raw,1,false,25],
+ ["STL","スティール",B.home.stl,B.away.stl,raw,1,false,15],
+ ["TO","ターンオーバー",B.home.to,B.away.to,raw,-1,false,25],
+ ["BLK","ブロック",B.home.blk,B.away.blk,raw,1,false,5],
+];
+$('#mirror').innerHTML=rows.map(r=>{
+ if(r.length===1)return `<div class="mgroup">${r[0]}</div>`;
+ const [k,jp,h,a,f,dir,flag,max]=r;
+ const win=dir===0||h===a?'':((h>a)===(dir>0)?'win-h':'win-a');
+ const w=v=>Math.min(100,v/max*100).toFixed(1);
+ return `<div class="mrow ${win} ${flag?'flag':''}"><span class="v h">${f(h)}</span><div class="track l"><i style="width:${w(h)}%"></i></div><div class="lab"><b>${k}</b><span>${jp}</span></div><div class="track r"><i style="width:${w(a)}%"></i></div><span class="v a">${f(a)}</span></div>`;
+}).join('');})();
+
+/* Quarter chart (SVG) */
+(()=>{const W=460,H=240,pl=34,pr=10,pt=14,pb=34,max=30;
+const x0=pl,cw=(W-pl-pr)/4,bw=cw*.28,y=v=>pt+(H-pt-pb)*(1-v/max);
+let s=`<svg viewBox="0 0 ${W} ${H}" width="100%" role="img" aria-label="クォーター別得点">`;
+[0,10,20,30].forEach(t=>{s+=`<line x1="${pl}" x2="${W-pr}" y1="${y(t)}" y2="${y(t)}" stroke="var(--line)"/><text x="${pl-6}" y="${y(t)+4}" text-anchor="end" font-size="11" fill="var(--muted)">${t}</text>`});
+for(let i=0;i<4;i++){const cx=x0+cw*i+cw/2,h=D.q.home[i],a=D.q.away[i];
+ if(h===0&&a===0){s+=`<rect x="${cx-bw-2}" y="${pt}" width="${bw*2+4}" height="${H-pt-pb}" fill="var(--warn-soft)" stroke="var(--warn)" stroke-dasharray="3 3"/><text x="${cx}" y="${y(15)}" text-anchor="middle" font-size="12" fill="var(--warn)" font-weight="700">データなし</text>`}
+ else{s+=`<rect x="${cx-bw-2}" y="${y(h)}" width="${bw}" height="${y(0)-y(h)}" fill="var(--home)"/><rect x="${cx+2}" y="${y(a)}" width="${bw}" height="${y(0)-y(a)}" fill="var(--away)"/>
+ <text x="${cx-bw/2-2}" y="${y(h)-5}" text-anchor="middle" font-size="13" font-weight="700" fill="var(--home)">${h}</text><text x="${cx+bw/2+2}" y="${y(a)-5}" text-anchor="middle" font-size="13" font-weight="700" fill="var(--away)">${a}</text>`;
+ const d=h-a;s+=`<text x="${cx}" y="${H-6}" text-anchor="middle" font-size="11" fill="${d<0?'var(--neg)':d>0?'var(--pos)':'var(--muted)'}">${d>0?'+':''}${d}</text>`}
+ s+=`<text x="${cx}" y="${H-pb+16}" text-anchor="middle" font-size="13" font-weight="600" fill="var(--ink)">Q${i+1}</text>`;}
+s+='</svg>';$('#qchart').innerHTML=s;})();
+
+/* Shot source stacked bars */
+(()=>{const B=D.box;const rows=['home','away'].map(t=>({t,p2:B[t].pm2*2,p3:B[t].pm3*3,ft:B[t].ftm}));
+const html=rows.map(r=>{const tot=r.p2+r.p3+r.ft,c=r.t==='home'?'var(--home)':'var(--away)';
+ const seg=(v,op,l)=>`<span title="${l} ${v}点" style="width:${(v/tot*100).toFixed(1)}%;background:${c};opacity:${op};display:flex;align-items:center;justify-content:center;color:var(--bg);font-family:var(--f-display);font-weight:700;font-size:.85rem;white-space:nowrap;overflow:hidden">${l} ${Math.round(v/tot*100)}%</span>`;
+ return `<div style="display:grid;gap:4px"><div style="display:flex;justify-content:space-between;font-size:.85rem"><b>${r.t==='home'?'新潟':'日立ハイテク'}</b><span class="mono" style="color:var(--muted)">2P ${r.p2} / 3P ${r.p3} / FT ${r.ft}</span></div><div style="display:flex;height:28px;gap:2px">${seg(r.p2,1,'2P')}${seg(r.p3,.72,'3P')}${seg(r.ft,.45,'FT')}</div></div>`}).join('');
+$('#shotchart').innerHTML=`<div style="display:grid;gap:14px">${html}</div>
+<div style="display:grid;grid-template-columns:repeat(2,1fr);gap:8px;margin-top:6px;font-size:.85rem">
+<div><span class="eyebrow">3PA 比率</span><div class="num" style="font-size:1.4rem;font-weight:700"><span style="color:var(--home)">${(B.home.pa3/(B.home.pa2+B.home.pa3)*100).toFixed(0)}%</span> <span style="color:var(--muted);font-size:1rem">vs</span> <span style="color:var(--away)">${(B.away.pa3/(B.away.pa2+B.away.pa3)*100).toFixed(0)}%</span></div></div>
+<div><span class="eyebrow">AST / FGM</span><div class="num" style="font-size:1.4rem;font-weight:700"><span style="color:var(--home)">${(B.home.ast/(B.home.pm2+B.home.pm3)*100).toFixed(0)}%</span> <span style="color:var(--muted);font-size:1rem">vs</span> <span style="color:var(--away)">${(B.away.ast/(B.away.pm2+B.away.pm3)*100).toFixed(0)}%</span></div></div></div>`;})();
+
+/* Game stats */
+(()=>{const g=D.gs;const rows=[["最大リード",g.maxLead.home,g.maxLead.away,1],["TOからの得点",g.toPts.home,g.toPts.away,1],["セカンドチャンス得点",g.second.home,g.second.away,1],["ORB 1本あたり得点",(g.second.home/D.box.home.orb).toFixed(2),(g.second.away/D.box.away.orb).toFixed(2),1],["相手TO 1本あたり得点",(g.toPts.home/D.box.away.to).toFixed(2),(g.toPts.away/D.box.home.to).toFixed(2),1]];
+$('#gamestats').innerHTML=`<table class="ledger" style="min-width:0"><thead><tr><th></th><th class="r" style="color:var(--home)">新潟</th><th class="r" style="color:var(--away)">日立</th></tr></thead><tbody>${rows.map(r=>{const hw=+r[1]>+r[2];return `<tr><td>${r[0]}</td><td class="r diff" style="color:${hw?'var(--home)':'var(--muted)'}">${r[1]}</td><td class="r diff" style="color:${!hw?'var(--away)':'var(--muted)'}">${r[2]}</td></tr>`}).join('')}</tbody></table>
+<p class="note">ORB 1本あたりの得点、相手 TO 1本あたりの得点はどちらも両チームほぼ同じ。差を生んだのは決定力ではなく、ORB と TO の本数そのものだった。</p>`;})();
+
+/* Runs */
+(()=>{const r=D.gs.run;const card=(t,o)=>{const c=t==='home'?'var(--home)':'var(--away)';return `<div style="display:grid;grid-template-columns:auto 1fr;gap:14px;align-items:center;padding:10px 0;border-bottom:1px solid var(--line)"><span class="num" style="font-size:2.6rem;font-weight:800;color:${c};line-height:1">${o.pts}-0</span><div><b>${t==='home'?'新潟':'日立ハイテク'}</b><div class="mono" style="font-size:.82rem;color:var(--muted)">Q${o.q} ${o.start} → ${o.end}</div></div></div>`};
+$('#runs').innerHTML=card('away',r.away)+card('home',r.home)+`<p class="note" style="margin-top:8px">どちらのランも Q1。日立の 9-0 の後、新潟は Q1 終盤に 6-0 で取り返して同点で終えた。その後は大きなランがないまま、Q2 で −9、Q3 で −6、Q4 で −8 と各クォーターで少しずつ離された。</p>`;})();
+
+/* Lineup ledger */
+let team='home';
+function fmt(sec){return Math.floor(sec/60)+':'+String(sec%60).padStart(2,'0')}
+function renderLineups(){
+ const L=D.lu[team],maxAbs=9;
+ $('#ledger').className='ledger '+(team==='home'?'home-c':'away-c');
+ $('#ledger').innerHTML=`<thead><tr><th>ユニット</th><th class="r">時間</th><th>Q</th><th class="r">得点-失点</th><th>+/−</th><th class="r">Diff</th></tr></thead><tbody>${L.map(([p,s,sc,al,q])=>{const d=sc-al,w=Math.min(100,Math.abs(d)/maxAbs*100);
+ return `<tr class="${s<60?'small-sample':''}"><td><div class="chips">${p.split(' ').map(n=>`<span class="chip">#${n}</span>`).join('')}</div></td><td class="r mono">${fmt(s)}</td><td class="qs">${q.split('').map(x=>'Q'+x).join(' ')}</td><td class="r mono">${sc}-${al}</td><td><div class="pm"><div class="n">${d<0?`<i style="width:${w}%"></i>`:''}</div><div class="p">${d>0?`<i style="width:${w}%"></i>`:''}</div></div></td><td class="r diff ${d>0?'pos':d<0?'neg':''}">${d>0?'+':''}${d}</td></tr>`}).join('')}</tbody>`;
+ $('#lineupNote').innerHTML= team==='home'
+ ? `<h3>新潟のユニットから読み取れること</h3><p class="note" style="color:var(--ink)">最も長く使った <b>#10 #12 #22 #57 #7</b>（6:29）は +1 で、主力ユニットとしては互角に戦えていた。一方、<b>#75</b> と <b>#22</b> が同時に入ったユニットは計8組で合計 −12 と、失点が集中している（得失点の総数が最終スコアと合わないため、傾向として見てください）。プラスを出したユニットは多くが1〜2分の短い出場に限られ、長い時間を任せて結果を出したユニットは少なかった。</p>`
+ : `<h3>日立ハイテクのユニットから読み取れること</h3><p class="note" style="color:var(--ink)"><b>#11 #18 #21 #30 #51</b> が Q3〜Q4 に3:45 出場して +6、<b>#11 #14 #18 #21 #51</b> は 1:18 で 11-2 と、後半の突き放しを担った。Q4 に3:16 出た <b>#13 #14 #18 #51 #77</b> は −6 だったが、点差がついた後の時間帯と考えられる。</p>`;
+}
+['home','away'].forEach(t=>{$('#tab-'+t).addEventListener('click',()=>{team=t;$('#tab-home').setAttribute('aria-selected',t==='home');$('#tab-away').setAttribute('aria-selected',t==='away');renderLineups()})});
+renderLineups();
+
+/* Sub log */
+(()=>{$('#subgrid').innerHTML=[1,2,3,4].map(q=>{const s=D.subs.filter(x=>x[0]===q);const hc=s.filter(x=>x[2]==='h').length,ac=s.length-hc;
+ return `<div class="subq"><h4>Q${q}<span><span style="color:var(--home)">新潟 ${hc}</span> · <span style="color:var(--away)">日立 ${ac}</span></span></h4>${s.map(x=>`<div class="sub ${x[2]==='h'?'home':'away'}"><span class="t">${x[1]}</span><span class="io"><span class="in">IN ${esc(x[4])}</span><br><span class="out">OUT ${esc(x[3])}</span></span></div>`).join('')}</div>`}).join('');})();
+</script>
+
+</body>
+</html>
