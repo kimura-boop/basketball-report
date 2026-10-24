@@ -4,7 +4,6 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title>新潟 vs 日立ハイテク 10.24</title>
-<meta name="claude:viewport-fit-sides" content="cover">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@500;600;700;800&family=Zen+Kaku+Gothic+New:wght@400;500;700;900&family=IBM+Plex+Mono:wght@400;500&display=swap">
@@ -122,6 +121,13 @@ svg text{font-family:var(--f-display)}
 .diff{font-family:var(--f-display);font-weight:800;font-size:1.05rem;font-variant-numeric:tabular-nums}
 .diff.pos{color:var(--pos)} .diff.neg{color:var(--neg)}
 .small-sample td{opacity:.62}
+
+/* Rotation */
+.rot-wrap{overflow-x:auto;background:var(--surface);border:1px solid var(--line);padding:12px 12px 6px}
+.rot-wrap svg{display:block;width:100%;min-width:680px;height:auto}
+.rot-head{display:flex;justify-content:space-between;align-items:baseline;flex-wrap:wrap;gap:6px}
+.rot-head h3{margin:0;font-size:1rem;font-weight:700}
+.rot-head span{font-size:.8rem;color:var(--muted)}
 
 /* Sub log */
 .subgrid{display:grid;grid-template-columns:repeat(4,1fr);gap:12px}
@@ -256,6 +262,19 @@ footer dd{margin:0}
     </div>
   </section>
 
+  <section aria-labelledby="s-rot">
+    <div class="sec-head"><span class="eyebrow">Rotation Map</span><h2 id="s-rot">ローテーション</h2></div>
+    <p class="note">交代ログから再構成した出場時間帯です。右端の数字は出場時間（分）、● はスターター。両チームとも合計200分で整合しています。</p>
+    <div class="rot-head"><h3 style="color:var(--home)">新潟アルビレックスBBラビッツ</h3><span>13人出場</span></div>
+    <div class="rot-wrap" id="rotH"></div>
+    <div class="rot-head"><h3 style="color:var(--away)">日立ハイテククーガーズ</h3><span>12人出場</span></div>
+    <div class="rot-wrap" id="rotA"></div>
+    <div class="panel">
+      <h3>出場時間の配分</h3>
+      <p class="note" style="color:var(--ink)">日立は最長の #51 中野でも23.7分で、8人が17分以上出場しました。新潟は #7 久井 29.2分、#12 金沢 26.6分、#22 森田 26.1分と上位3人に時間が集まっています。スターターの #11 入澤は1Q 8:53 に交代した後、出場がありませんでした。</p>
+    </div>
+  </section>
+
   <section aria-labelledby="s-lineup">
     <div class="sec-head"><span class="eyebrow">Lineups</span><h2 id="s-lineup">5人ユニット別 +/−</h2></div>
     <div class="tabs" role="tablist" aria-label="チーム切替">
@@ -386,6 +405,30 @@ function renderLineups(){
 }
 ['home','away'].forEach(t=>{$('#tab-'+t).addEventListener('click',()=>{team=t;$('#tab-home').setAttribute('aria-selected',t==='home');$('#tab-away').setAttribute('aria-selected',t==='away');renderLineups()})});
 renderLineups();
+
+/* Rotation */
+function rotation(team,el,color){
+ const k=team==='home'?'h':'a',S=D.subs.filter(x=>x[2]===k),num=s=>s.split(' ')[0];
+ const first={},names={};S.forEach(x=>{const o=num(x[3]),i=num(x[4]);names[o]=x[3].slice(o.length+1);names[i]=x[4].slice(i.length+1);if(!(o in first))first[o]='out';if(!(i in first))first[i]='in'});
+ const starters=Object.keys(first).filter(p=>first[p]==='out');
+ const t=(q,c)=>{const[m,s]=c.split(':').map(Number);return (q-1)*600+600-(m*60+s)};
+ const on=new Map(starters.map(p=>[p,0])),st=[];
+ S.forEach(x=>{const tt=t(x[0],x[1]),o=num(x[3]),i=num(x[4]);if(on.has(o)){st.push([o,on.get(o),tt]);on.delete(o)}on.set(i,tt)});
+ for(const[p,a]of on)st.push([p,a,2400]);
+ const mins={};st.forEach(([p,a,b])=>mins[p]=(mins[p]||0)+b-a);
+ const players=Object.keys(mins).sort((a,b)=>{const sa=starters.includes(a),sb=starters.includes(b);return sa!==sb?(sa?-1:1):mins[b]-mins[a]});
+ const W=960,pl=170,pr=52,rh=26,pt=24,cw=W-pl-pr,H=pt+players.length*rh+8,x=v=>pl+v/2400*cw;
+ let g='';
+ for(let q=0;q<4;q++){if(q%2===0)g+=`<rect x="${x(q*600)}" y="${pt}" width="${cw/4}" height="${players.length*rh}" fill="var(--line)" opacity=".5"/>`;g+=`<text x="${x(q*600+300)}" y="15" text-anchor="middle" font-size="13" font-weight="600" fill="var(--muted)" letter-spacing="1">Q${q+1}</text>`}
+ [1,2,3].forEach(q=>g+=`<line x1="${x(q*600)}" x2="${x(q*600)}" y1="${pt}" y2="${pt+players.length*rh}" stroke="var(--muted)" stroke-width=".6" fill="none"/>`);
+ players.forEach((p,r)=>{const y=pt+r*rh;
+  g+=`<line x1="${pl}" x2="${W-pr}" y1="${y+rh}" y2="${y+rh}" stroke="var(--line)" fill="none"/>`;
+  g+=`<text x="${pl-10}" y="${y+17}" text-anchor="end" font-size="13" fill="var(--ink)" style="font-family:var(--f-body)">${esc(p+' '+names[p])}${starters.includes(p)?' ●':''}</text>`;
+  st.filter(s=>s[0]===p&&s[2]>s[1]).forEach(([_,a,b])=>g+=`<rect x="${x(a)}" y="${y+6}" width="${Math.max(1.5,x(b)-x(a))}" height="${rh-12}" fill="${color}" rx="1.5"/>`);
+  g+=`<text x="${W-pr+10}" y="${y+18}" font-size="15" font-weight="700" fill="var(--ink)">${(mins[p]/60).toFixed(1)}</text>`});
+ $(el).innerHTML=`<svg viewBox="0 0 ${W} ${H}" role="img" aria-label="${team==='home'?'新潟':'日立ハイテク'}のローテーション">${g}</svg>`;
+}
+rotation('home','#rotH','var(--home)');rotation('away','#rotA','var(--away)');
 
 /* Sub log */
 (()=>{$('#subgrid').innerHTML=[1,2,3,4].map(q=>{const s=D.subs.filter(x=>x[0]===q);const hc=s.filter(x=>x[2]==='h').length,ac=s.length-hc;
