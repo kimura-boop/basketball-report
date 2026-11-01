@@ -1,0 +1,83 @@
+/* Wリーグ FUTURE 分析 — 共通スタイル
+   Layout: 単一カラム（最大1040px）。上部にサイト共通ナビ、各ページはセクションの縦積み。 */
+:root{
+  --bg:#f2f4f6; --surface:#ffffff; --line:#d9dee4; --fg:#18202a; --muted:#5d6876; --soft:#e8ecf0;
+  --hi:#e8b320; --plus:#1f8a5a; --minus:#d0652a; --even:#9aa3ad; --win:#1f8a5a; --loss:#b23a3a;
+  --num:"Barlow Condensed","Arial Narrow",sans-serif;
+  --body:"Zen Kaku Gothic New","Hiragino Sans","Yu Gothic",sans-serif;
+}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){
+  --bg:#11161c; --surface:#19212a; --line:#2c3743; --fg:#e7ecf1; --muted:#9aa7b5; --soft:#202a35;
+  --hi:#f0c450; --plus:#3fbf86; --minus:#f08a4b; --even:#5f6b78; --win:#3fbf86; --loss:#ec6c6c; color-scheme:dark}}
+:root[data-theme="dark"]{
+  --bg:#11161c; --surface:#19212a; --line:#2c3743; --fg:#e7ecf1; --muted:#9aa7b5; --soft:#202a35;
+  --hi:#f0c450; --plus:#3fbf86; --minus:#f08a4b; --even:#5f6b78; --win:#3fbf86; --loss:#ec6c6c; color-scheme:dark}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--fg);font-family:var(--body);font-size:15px;line-height:1.7}
+a{color:inherit}
+.topbar{background:var(--surface);border-bottom:1px solid var(--line);position:sticky;top:0;z-index:5}
+.topbar .in{max-width:1040px;margin:0 auto;padding-block:10px;padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));display:flex;align-items:center;gap:14px;flex-wrap:wrap}
+.brand{font-weight:700;text-decoration:none;display:flex;align-items:baseline;gap:8px}
+.brand .tag{font-family:var(--num);letter-spacing:.14em;font-size:.75rem;color:var(--muted);font-weight:600}
+.teamnav{display:flex;gap:6px;flex-wrap:wrap;margin-left:auto}
+.teamnav a{font-size:.78rem;text-decoration:none;padding:3px 9px;border-radius:999px;border:1px solid var(--line);display:inline-flex;align-items:center;gap:6px}
+.teamnav a:hover,.teamnav a[aria-current="page"]{background:var(--soft)}
+.dot{width:8px;height:8px;border-radius:50%;display:inline-block;flex:none}
+.wrap{max-width:1040px;margin:0 auto;padding-block:26px 64px;padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));display:flex;flex-direction:column;gap:38px}
+h1{font-size:1.5rem;margin:0;text-wrap:balance}
+h2{font-size:1.12rem;margin:0 0 12px;display:flex;align-items:baseline;gap:10px;text-wrap:balance}
+h2 .en{font-family:var(--num);font-weight:600;letter-spacing:.12em;font-size:.78rem;color:var(--muted);text-transform:uppercase}
+h3{font-size:.95rem;margin:0 0 8px}
+.num{font-family:var(--num);font-variant-numeric:tabular-nums}
+.muted{color:var(--muted)}
+.note{font-size:.78rem;color:var(--muted);margin:10px 0 0}
+.card{background:var(--surface);border:1px solid var(--line);border-radius:6px;padding:14px 16px;min-width:0}
+.grid2{display:grid;grid-template-columns:repeat(auto-fit,minmax(320px,1fr));gap:14px}
+.tblwrap{overflow-x:auto;-webkit-overflow-scrolling:touch}
+table{border-collapse:collapse;width:100%;font-variant-numeric:tabular-nums}
+.tbl th,.tbl td{padding:6px 8px;border-bottom:1px solid var(--line);white-space:nowrap;text-align:right}
+.tbl thead th{font-size:.72rem;color:var(--muted);font-weight:600;background:var(--bg)}
+.tbl td{font-family:var(--num);font-size:1rem}
+.tbl td.l,.tbl th.l{text-align:left}
+.tbl td.t{font-family:var(--body);font-size:.85rem;text-align:left}
+.tbl tr.link{cursor:pointer}
+.tbl tr.link:hover td{background:var(--soft)}
+.tbl tr.tot td{font-weight:700;border-top:2px solid var(--fg)}
+.pos{color:var(--plus)} .neg{color:var(--minus)}
+.w{color:var(--win);font-weight:700} .lo{color:var(--loss);font-weight:700}
+.chart{background:var(--surface);border:1px solid var(--line);border-radius:6px;padding:12px}
+.chart svg{width:100%;height:auto;display:block}
+.chart svg text{font-family:var(--num);fill:var(--muted);font-size:12px}
+.legend{display:flex;flex-wrap:wrap;gap:6px 18px;font-size:.8rem;color:var(--muted);padding:8px 2px 0}
+.sw{display:inline-block;width:10px;height:10px;border-radius:2px;margin-right:6px;vertical-align:-1px}
+.loading{padding:40px 0;text-align:center;color:var(--muted)}
+.err{background:var(--surface);border:1px solid var(--minus);border-radius:6px;padding:14px 16px}
+.pill{display:inline-block;font-size:.72rem;padding:1px 8px;border-radius:999px;background:var(--soft);color:var(--muted);font-weight:500}
+.seg{display:inline-flex;border:1px solid var(--line);border-radius:6px;overflow:hidden;margin-bottom:10px}
+.seg button{font:inherit;font-size:.82rem;padding:6px 14px;border:0;background:var(--surface);color:var(--muted);cursor:pointer}
+.seg button[aria-pressed="true"]{background:var(--fg);color:var(--bg);font-weight:700}
+button:focus-visible,a:focus-visible{outline:2px solid var(--hi);outline-offset:2px}
+.points{display:grid;gap:10px;padding:0;margin:0;list-style:none}
+.points li{background:var(--surface);border:1px solid var(--line);border-radius:6px;padding:12px 16px;display:grid;grid-template-columns:5.6rem 1fr;gap:14px;align-items:start}
+.points .big{font-family:var(--num);font-weight:700;font-size:1.8rem;line-height:1.05}
+.points .big small{display:block;font-family:var(--body);font-size:.68rem;font-weight:500;color:var(--muted)}
+.points p{margin:0;min-width:0}
+.fr{display:grid;grid-template-columns:4.4rem 1fr 9rem 1fr 4.4rem;align-items:center;gap:8px;margin-bottom:9px}
+.fr .lab{text-align:center;font-size:.82rem;line-height:1.3}
+.fr .lab small{display:block;color:var(--muted);font-size:.7rem}
+.fr .v{font-family:var(--num);font-weight:600;font-size:1.12rem}
+.fr .v.r{text-align:right}
+.bar{height:10px;background:var(--soft);border-radius:5px;overflow:hidden;display:flex}
+.bar.l{justify-content:flex-end}
+.bar i{display:block;height:100%}
+.pmc{display:flex;align-items:center;justify-content:flex-end;gap:6px}
+.pmb{width:56px;height:8px;position:relative}
+.pmb::before{content:"";position:absolute;left:50%;top:-2px;bottom:-2px;width:1px;background:var(--line)}
+.pmb i{position:absolute;top:0;height:100%;border-radius:2px}
+footer.site{font-size:.75rem;color:var(--muted);border-top:1px solid var(--line);padding-top:14px}
+@media (max-width:560px){
+  .fr{grid-template-columns:3.4rem 1fr 6.4rem 1fr 3.4rem}
+  .points li{grid-template-columns:1fr;gap:4px}
+  .teamnav{margin-left:0}
+}
+@media (prefers-reduced-motion:reduce){*{transition:none!important;animation:none!important}}

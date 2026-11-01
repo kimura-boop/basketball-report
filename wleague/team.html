@@ -1,0 +1,154 @@
+<!doctype html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="robots" content="noindex,nofollow">
+<title>チーム分析 | Wリーグ FUTURE 分析</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@500;600;700&family=Zen+Kaku+Gothic+New:wght@400;500;700&display=swap">
+<link rel="stylesheet" href="assets/style.css">
+<style>
+.thead{border-left:6px solid var(--team);padding-left:14px}
+.thead .rec{font-family:var(--num);font-size:2.2rem;font-weight:700;line-height:1.1}
+.thead .sub{color:var(--muted);font-size:.88rem}
+.tiles{display:grid;grid-template-columns:repeat(auto-fit,minmax(130px,1fr));gap:10px}
+.tile{background:var(--surface);border:1px solid var(--line);border-radius:6px;padding:10px 14px}
+.tile .v{font-family:var(--num);font-size:1.6rem;font-weight:700;line-height:1.1}
+.tile .l{font-size:.75rem;color:var(--muted)}
+.tile .o{font-size:.78rem;color:var(--muted)}
+#heat text{font-family:var(--body);font-size:11.5px;fill:var(--fg)}
+#heat text.mono{font-family:var(--num);fill:var(--muted)}
+.lu td.u{text-align:left;font-family:var(--body);font-size:.8rem;white-space:normal;line-height:1.45;min-width:12em}
+</style>
+</head>
+<body>
+<header class="topbar" id="topbar"></header>
+<main class="wrap" id="app"><div class="loading" id="ld">試合データを読み込んでいます…</div></main>
+<script src="assets/core.js"></script>
+<script>
+(async function(){
+  const app=document.getElementById('app');
+  const id=+WL.qs.get('id');const cfg=WL.CONFIG.teams[id];
+  WL.topbar(id);
+  if(!cfg){app.innerHTML='<div class="err">チームが見つかりません。<a href="./">トップページ</a>から選んでください。</div>';return;}
+  document.documentElement.style.setProperty('--team',cfg.color);
+  document.title=`${cfg.short} | Wリーグ FUTURE 分析`;
+  let S;try{S=await WL.loadSchedule();}catch(e){WL.showError(app,e);return;}
+  const ids=S.games.filter(g=>g.final&&(g.home.id===id||g.away.id===id)).map(g=>g.id);
+  if(!ids.length){app.innerHTML=`<h1>${WL.esc(cfg.name)}</h1><p class="muted">まだ終了した試合がありません。</p>`;return;}
+  const games=await WL.loadGames(ids,(d,n)=>{const el=document.getElementById('ld');if(el)el.textContent=`試合データを読み込んでいます…（${d}/${n}）`;});
+  const A=WL.aggregateTeam(id,games);const esc=WL.esc,f1=WL.f1,n=A.log.length;
+  const per=v=>f1(v/n);
+  const next=S.games.find(g=>!g.final&&(g.home.id===id||g.away.id===id));
+
+  const sumF=A.sum.for,sumA=A.sum.against;
+  app.innerHTML=`
+  <header class="thead"><h1>${esc(cfg.name)}</h1><div class="rec">${A.w}勝${A.l}敗</div>
+    <div class="sub">${n}試合　平均 ${per(sumF.pts)} 得点／${per(sumA.pts)} 失点${next?`｜次戦：${next.date.slice(5).replace('-','/')} ${next.home.id===id?'vs':'@'} ${esc(next.home.id===id?next.away.short:next.home.short)}`:''}</div></header>
+
+  <section><h2>シーズン指標<span class="en">Season</span></h2>
+    <div class="tiles">
+      ${tile('ORtg',f1(A.ortg),'100ポゼ当たり得点')}${tile('DRtg',f1(A.drtg),'100ポゼ当たり失点')}${tile('Net',WL.signed(+f1(A.ortg-A.drtg)),'ORtg − DRtg')}${tile('Pace',f1(A.pace),'40分あたりポゼッション')}
+    </div>
+    <div style="margin-top:18px" id="factors"></div>
+    <p class="note">左が${esc(cfg.short)}、右がその対戦相手の合計。全試合を合算して算出。</p></section>
+
+  <section><h2>試合ごとの推移<span class="en">Trend</span></h2>
+    <div class="seg" role="group" aria-label="指標"><button type="button" data-m="margin" aria-pressed="true">得失点差</button><button type="button" data-m="rtg" aria-pressed="false">ORtg / DRtg</button><button type="button" data-m="efg" aria-pressed="false">eFG%</button><button type="button" data-m="tov" aria-pressed="false">TO%</button><button type="button" data-m="orb" aria-pressed="false">OREB%</button></div>
+    <div class="chart"><svg id="trend" role="img" aria-label="試合ごとの指標推移"></svg><div class="legend" id="trendLegend"></div></div></section>
+
+  <section><h2>試合一覧<span class="en">Game Log</span></h2><div class="tblwrap"><table class="tbl" id="log"></table></div>
+    <p class="note">行を押すとその試合のレポートを開きます。</p></section>
+
+  <section><h2>クォーター別の傾向<span class="en">By Quarter</span></h2><div class="grid2">
+    <div class="chart"><svg id="qchart" role="img" aria-label="クォーター別平均得失点"></svg><div class="legend"><span><i class="sw" style="background:var(--team)"></i>平均得点</span><span><i class="sw" style="background:var(--even)"></i>平均失点</span></div></div>
+    <div class="card"><h3>状況別の得点（1試合平均）</h3><div class="tblwrap"><table class="tbl" id="sit"></table></div><p class="note">TOからの得点・セカンドチャンスはプレイバイプレイから算出した参考値。</p></div>
+  </div></section>
+
+  <section><h2>選手スタッツ<span class="en">Players</span></h2><div class="tblwrap"><table class="tbl" id="pl"></table></div>
+    <p class="note">1試合平均。+/− は全試合の合計で、交代記録から算出。</p></section>
+
+  <section><h2>出場時間の推移<span class="en">Minutes</span></h2>
+    <div class="chart"><div class="tblwrap"><svg id="heat" role="img" aria-label="選手ごとの試合別出場時間"></svg></div>
+    <div class="legend"><span>色の濃さ＝出場時間</span><span>数字＝その試合の +/−</span><span>枠線＝スターター</span></div></div></section>
+
+  <section><h2>ラインナップ通算<span class="en">Lineups</span></h2><div class="tblwrap"><table class="tbl lu" id="lu"></table></div>
+    <p class="note">複数試合を合算した5人ユニットの得失点（通算3分以上）。試合数が増えるほど信頼できる数字になります。</p></section>
+
+  <footer class="site">データ出典：WJBL公式サイト。終了した試合から自動集計。</footer>`;
+
+  function tile(l,v,s){return `<div class="tile"><div class="l">${l}</div><div class="v">${v}</div><div class="o">${s}</div></div>`;}
+
+  /* factors team vs opp */
+  const FR=[['eFG%','実効FG%','efg',1],['TO%','ターンオーバー率','tov',0],['OREB%','オフェンスリバウンド率','orb',1],['FT Rate','FTA / FGA','ftr',1],['3P%','3P成功率','p3',1],['AST%','アシスト / FGM','astr',1]];
+  document.getElementById('factors').innerHTML=FR.map(([lab,sub,key,good])=>{const h=A.F[key],a=A.oF[key],m=Math.max(h,a,1)*1.1,hw=good?h>a:h<a,aw=!hw&&h!==a;
+    return `<div class="fr"><span class="v" style="color:var(--team)">${hw?'<b>':''}${f1(h)}%${hw?'</b>':''}</span><div class="bar l"><i style="width:${h/m*100}%;background:var(--team)"></i></div><div class="lab">${lab}<small>${sub}</small></div><div class="bar"><i style="width:${a/m*100}%;background:var(--even)"></i></div><span class="v r muted">${aw?'<b>':''}${f1(a)}%${aw?'</b>':''}</span></div>`}).join('');
+
+  /* trend */
+  let tm='margin';
+  function drawTrend(){
+    const svg=document.getElementById('trend');svg.innerHTML='';const W=900,Ht=260,L=44,R=14,T=16,B=46;
+    svg.setAttribute('viewBox',`0 0 ${W} ${Ht}`);const el=(nm,a,t)=>WL.svgEl(svg,nm,a,t);
+    const xs=i=>L+(W-L-R)*(n===1?.5:i/(n-1));
+    const series=tm==='margin'?[{v:A.log.map(g=>g.pf-g.pa),c:'var(--team)',lab:'得失点差',bar:true}]
+      :tm==='rtg'?[{v:A.log.map(g=>g.F.ortg),c:'var(--team)',lab:'ORtg（得点効率）'},{v:A.log.map(g=>g.oF.ortg),c:'var(--even)',lab:'DRtg（失点効率）'}]
+      :[{v:A.log.map(g=>g.F[tm]),c:'var(--team)',lab:cfg.short},{v:A.log.map(g=>g.oF[tm]),c:'var(--even)',lab:'対戦相手'}];
+    const all=series.flatMap(s=>s.v);let lo=Math.min(...all),hi=Math.max(...all);
+    if(series[0].bar){const m=Math.max(5,Math.ceil(Math.max(Math.abs(lo),Math.abs(hi))/5)*5);lo=-m;hi=m;}else{const pad=(hi-lo)*.15||5;lo=Math.floor((lo-pad)/5)*5;hi=Math.ceil((hi+pad)/5)*5;}
+    const y=v=>T+(Ht-T-B)*(1-(v-lo)/(hi-lo));
+    for(let i=0;i<=4;i++){const v=lo+(hi-lo)*i/4;el('line',{x1:L,x2:W-R,y1:y(v),y2:y(v),stroke:'var(--line)','stroke-dasharray':(series[0].bar&&Math.abs(v)<1e-9)?'':'3 4'});el('text',{x:L-8,y:y(v)+4,'text-anchor':'end'},series[0].bar?WL.signed(Math.round(v)):Math.round(v));}
+    A.log.forEach((g,i)=>{const t=el('text',{x:xs(i),y:Ht-26,'text-anchor':'middle'},`${g.ha==='H'?'vs':'@'}${g.opp.short}`);t.style.fill='var(--fg)';el('text',{x:xs(i),y:Ht-10,'text-anchor':'middle',style:`fill:var(--${g.win?'win':'loss'})`},g.win?'○':'●');});
+    if(series[0].bar){const bw=Math.min(36,(W-L-R)/n*.6);series[0].v.forEach((v,i)=>{const r=el('rect',{x:xs(i)-bw/2,y:Math.min(y(v),y(0)),width:bw,height:Math.max(1,Math.abs(y(v)-y(0))),rx:2,fill:v>=0?'var(--plus)':'var(--minus)'});
+      const g=A.log[i];const ti=document.createElementNS('http://www.w3.org/2000/svg','title');ti.textContent=`${g.date} ${g.ha==='H'?'vs':'@'}${g.opp.short} ${g.pf}-${g.pa}`;r.appendChild(ti);
+      el('text',{x:xs(i),y:v>=0?y(v)-5:y(v)+14,'text-anchor':'middle',style:'fill:var(--fg);font-weight:600'},WL.signed(v));});}
+    else series.forEach(s=>{el('path',{d:s.v.map((v,i)=>(i?'L':'M')+xs(i)+' '+y(v)).join(' '),fill:'none',stroke:s.c,'stroke-width':2.2});s.v.forEach((v,i)=>{const c=el('circle',{cx:xs(i),cy:y(v),r:4,fill:s.c});const ti=document.createElementNS('http://www.w3.org/2000/svg','title');ti.textContent=`${s.lab}: ${f1(v)}`;c.appendChild(ti);});});
+    document.getElementById('trendLegend').innerHTML=series[0].bar?'<span><i class="sw" style="background:var(--plus)"></i>勝ち越し点差</span><span><i class="sw" style="background:var(--minus)"></i>負け越し点差</span>':series.map(s=>`<span><i class="sw" style="background:${s.c}"></i>${esc(s.lab)}</span>`).join('');
+  }
+  document.querySelectorAll('[data-m]').forEach(b=>b.addEventListener('click',()=>{tm=b.dataset.m;document.querySelectorAll('[data-m]').forEach(x=>x.setAttribute('aria-pressed',x===b));drawTrend();}));
+  drawTrend();
+
+  /* game log */
+  document.getElementById('log').innerHTML='<thead><tr><th class="l">日付</th><th class="l">対戦</th><th class="l">結果</th><th>ORtg</th><th>DRtg</th><th>Pace</th><th>eFG%</th><th>TO%</th><th>OREB%</th><th>FT Rate</th><th>3P%</th></tr></thead><tbody>'+
+    A.log.map(g=>`<tr class="link" onclick="location.href='game.html?id=${g.id}'"><td class="t">${esc(g.date.replace(/^\d+年/,''))}</td><td class="t">${g.ha==='H'?'vs':'@'} ${WL.teamLink(g.opp.id,g.opp.short)}</td><td class="t"><span class="${g.win?'w':'lo'}">${g.win?'○':'●'}</span> <span class="num">${g.pf}-${g.pa}</span></td><td>${f1(g.F.ortg)}</td><td>${f1(g.oF.ortg)}</td><td>${f1(g.pace)}</td><td>${f1(g.F.efg)}</td><td>${f1(g.F.tov)}</td><td>${f1(g.F.orb)}</td><td>${f1(g.F.ftr)}</td><td>${f1(g.F.p3)}%</td></tr>`).join('')+'</tbody>';
+
+  /* quarter chart */
+  (function(){const svg=document.getElementById('qchart');const W=420,Ht=230,L=34,R=10,T=14,B=28;svg.setAttribute('viewBox',`0 0 ${W} ${Ht}`);const el=(nm,a,t)=>WL.svgEl(svg,nm,a,t);
+    const Q=A.qDiff.slice(0,4).map(q=>({pf:q.pf/q.n,pa:q.pa/q.n}));const mx=Math.ceil(Math.max(...Q.flatMap(q=>[q.pf,q.pa]),10)/5)*5;
+    const y=v=>T+(Ht-T-B)*(1-v/mx);for(let v=0;v<=mx;v+=5){el('line',{x1:L,x2:W-R,y1:y(v),y2:y(v),stroke:'var(--line)','stroke-dasharray':v?'3 4':''});el('text',{x:L-6,y:y(v)+4,'text-anchor':'end'},v);}
+    const gw=(W-L-R)/4,bw=gw*.3;Q.forEach((q,i)=>{const cx=L+gw*i+gw/2;
+      el('rect',{x:cx-bw-2,y:y(q.pf),width:bw,height:y(0)-y(q.pf),rx:2,fill:'var(--team)'});el('rect',{x:cx+2,y:y(q.pa),width:bw,height:y(0)-y(q.pa),rx:2,fill:'var(--even)'});
+      el('text',{x:cx-bw/2-2,y:y(q.pf)-4,'text-anchor':'middle',style:'fill:var(--fg)'},f1(q.pf));el('text',{x:cx+bw/2+2,y:y(q.pa)-4,'text-anchor':'middle'},f1(q.pa));
+      const d=q.pf-q.pa;el('text',{x:cx,y:Ht-8,'text-anchor':'middle',style:`fill:var(--${d>=0?'plus':'minus'});font-weight:600`},`${i+1}Q ${WL.signed(+f1(d))}`);});})();
+
+  /* situational */
+  const avg=(f)=>f1(A.log.reduce((s,g)=>s+f(g),0)/n);
+  document.getElementById('sit').innerHTML=`<thead><tr><th class="l"></th><th>${esc(cfg.short)}</th><th>相手</th></tr></thead><tbody>`+
+    [['TOからの得点',g=>g.pot,g=>g.opot],['セカンドチャンス',g=>g.sc,g=>g.osc],['ベンチ得点',g=>g.bench,g=>g.obench]].map(([l,a,b])=>`<tr><td class="t">${l}</td><td><b>${avg(a)}</b></td><td>${avg(b)}</td></tr>`).join('')+
+    `<tr><td class="t">3P得点</td><td><b>${per(sumF.p3m*3)}</b></td><td>${per(sumA.p3m*3)}</td></tr><tr><td class="t">FT得点</td><td><b>${per(sumF.ftm)}</b></td><td>${per(sumA.ftm)}</td></tr><tr><td class="t">ターンオーバー</td><td><b>${per(sumF.to)}</b></td><td>${per(sumA.to)}</td></tr></tbody>`;
+
+  /* players */
+  document.getElementById('pl').innerHTML='<thead><tr><th class="l">#</th><th class="l">選手</th><th>試合</th><th>先発</th><th>MIN</th><th>PTS</th><th>REB</th><th>AST</th><th>STL</th><th>TO</th><th>FG%</th><th>3P</th><th>FT%</th><th>+/−</th></tr></thead><tbody>'+
+    A.players.map(p=>{const g=p.gp,fgm=p.p2m+p.p3m,fga=p.p2a+p.p3a;return `<tr><td class="l muted">${esc(p.no)}</td><td class="t">${esc(p.name)}</td><td>${g}</td><td>${p.gs}</td><td>${WL.mmss(p.sec/g)}</td><td><b>${f1(p.pts/g)}</b></td><td>${f1(p.tot/g)}</td><td>${f1(p.ast/g)}</td><td>${f1(p.stl/g)}</td><td>${f1(p.to/g)}</td><td>${fga?f1(fgm/fga*100):'-'}</td><td>${p.p3m}/${p.p3a}</td><td>${p.fta?f1(p.ftm/p.fta*100):'-'}</td><td class="${p.pm>0?'pos':p.pm<0?'neg':''}">${WL.signed(p.pm)}</td></tr>`}).join('')+'</tbody>';
+
+  /* minutes heatmap */
+  (function(){const svg=document.getElementById('heat');const rows=A.players,cols=A.log;const L=150,T=40,cw=Math.max(46,Math.min(80,640/cols.length)),rh=22,W=L+cw*cols.length+60,Ht=T+rh*rows.length+8;
+    svg.setAttribute('viewBox',`0 0 ${W} ${Ht}`);svg.style.minWidth=Math.min(W,900)+'px';svg.style.maxWidth=W+'px';const el=(nm,a,t)=>WL.svgEl(svg,nm,a,t);
+    cols.forEach((g,j)=>{el('text',{x:L+cw*j+cw/2,y:16,'text-anchor':'middle',class:'mono'},g.date.replace(/^\d+年/,'').replace(/\(.\)/,''));el('text',{x:L+cw*j+cw/2,y:32,'text-anchor':'middle'},`${g.ha==='H'?'vs':'@'}${g.opp.short}`);});
+    el('text',{x:W-6,y:32,'text-anchor':'end',class:'mono'},'平均');
+    rows.forEach((p,i)=>{const yy=T+rh*i;el('text',{x:4,y:yy+15,class:'mono'},'#'+p.no);el('text',{x:32,y:yy+15},p.name.length>9?p.name.slice(0,8)+'…':p.name);
+      cols.forEach((g,j)=>{const r=p.perGame[g.id];const x0=L+cw*j+2;
+        if(!r){el('rect',{x:x0,y:yy+2,width:cw-4,height:rh-4,rx:3,fill:'var(--soft)'});return;}
+        const a=Math.min(1,r.sec/(32*60));const rc=el('rect',{x:x0,y:yy+2,width:cw-4,height:rh-4,rx:3,fill:'var(--team)','fill-opacity':(.12+a*.88).toFixed(2),stroke:r.gs?'var(--fg)':'none','stroke-width':r.gs?1.2:0});
+        const ti=document.createElementNS('http://www.w3.org/2000/svg','title');ti.textContent=`${p.name} ${WL.mmss(r.sec)}・${r.pts}点・+/− ${WL.signed(r.pm)}`;rc.appendChild(ti);
+        el('text',{x:x0+(cw-4)/2,y:yy+15,'text-anchor':'middle',style:`font-family:var(--num);font-size:11.5px;font-weight:600;fill:${a>.55?'#fff':'var(--fg)'}`},WL.signed(r.pm));});
+      el('text',{x:W-6,y:yy+15,'text-anchor':'end',class:'mono'},WL.mmss(p.sec/p.gp));});})();
+
+  /* lineups */
+  const LU=A.lineups.filter(l=>l.sec>=180);const max=Math.max(1,...LU.map(l=>Math.abs(l.pf-l.pa)));
+  document.getElementById('lu').innerHTML='<thead><tr><th class="l">ユニット</th><th>試合</th><th>時間</th><th>得点</th><th>失点</th><th>10分換算</th><th>+/−</th></tr></thead><tbody>'+
+    (LU.length?LU.map(l=>{const d=l.pf-l.pa,w=Math.abs(d)/max*50,c=d>0?'var(--plus)':d<0?'var(--minus)':'var(--even)';
+      return `<tr><td class="u">${l.names.map(esc).join('・')}</td><td>${l.games.size}</td><td>${WL.mmss(l.sec)}</td><td>${l.pf}</td><td>${l.pa}</td><td class="muted">${WL.signed(+f1(d/l.sec*600))}</td><td><div class="pmc"><span class="pmb"><i style="${d>=0?'left:50%':'right:50%'};width:${d?w:0}%;background:${c}"></i></span><b style="color:${c};min-width:2.2em">${WL.signed(d)}</b></div></td></tr>`}).join(''):'<tr><td class="t muted" colspan="7">通算3分以上のユニットはまだありません。</td></tr>')+'</tbody>';
+})();
+</script>
+</body>
+</html>

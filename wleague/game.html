@@ -1,0 +1,229 @@
+<!doctype html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="robots" content="noindex,nofollow">
+<title>試合レポート | Wリーグ FUTURE 分析</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@500;600;700&family=Zen+Kaku+Gothic+New:wght@400;500;700&display=swap">
+<link rel="stylesheet" href="assets/style.css">
+<style>
+.meta{font-size:.85rem;color:var(--muted);display:flex;flex-wrap:wrap;gap:4px 16px}
+.board{display:grid;grid-template-columns:1fr auto 1fr;align-items:center;gap:12px;margin-top:12px}
+.team{display:flex;flex-direction:column;gap:2px;min-width:0}
+.team.away{text-align:right}
+.team .nm{font-weight:700;font-size:1.1rem}
+.team .sub{font-size:.78rem;color:var(--muted)}
+.score{font-family:var(--num);font-weight:700;font-size:clamp(3rem,10vw,4.8rem);line-height:1;display:flex;gap:14px;align-items:center;justify-content:center}
+.score .dash{color:var(--muted);font-size:.5em}
+.final{font-family:var(--num);letter-spacing:.2em;font-size:.75rem;color:var(--muted);text-align:center}
+.qt{margin:16px auto 0;max-width:460px}
+.qt th,.qt td{padding:4px 10px;text-align:center;border-bottom:1px solid var(--line);font-family:var(--num);font-size:1.05rem}
+.qt th{font-size:.78rem;color:var(--muted);font-weight:600}
+.qt td:first-child{text-align:left;font-family:var(--body);font-size:.9rem;font-weight:700}
+.facts{display:flex;flex-wrap:wrap;gap:6px 22px;font-size:.85rem;color:var(--muted);margin-top:10px}
+.facts b{color:var(--fg);font-family:var(--num);font-size:1.1rem;margin-left:4px}
+.kv{display:grid;grid-template-columns:1fr auto auto;gap:4px 16px;font-size:.88rem}
+.kv .num{font-size:1.05rem;text-align:right}
+.stack{display:flex;height:22px;border-radius:4px;overflow:hidden;margin:4px 0 8px}
+.stack span{display:flex;align-items:center;justify-content:center;font-family:var(--num);font-size:.8rem;color:#fff;font-weight:600;min-width:0;overflow:hidden}
+#rot text{font-family:var(--body);font-size:12px;fill:var(--fg)}
+#rot text.mono{font-family:var(--num);fill:var(--muted)}
+.box td.nm{text-align:left;font-family:var(--body);font-size:.85rem}
+.box tr.st td.nm{font-weight:700}
+.box tr.dnp td{color:var(--muted)}
+.lu td.u{text-align:left;font-family:var(--body);font-size:.8rem;white-space:normal;line-height:1.45;min-width:12em}
+.lu tr.st td.u{font-weight:700}
+.boxhead{display:flex;justify-content:space-between;align-items:baseline;flex-wrap:wrap;gap:6px;margin:18px 0 6px}
+@media (max-width:560px){.board{grid-template-columns:1fr 1fr}.board .mid{grid-column:1/-1;order:-1}}
+</style>
+</head>
+<body>
+<header class="topbar" id="topbar"></header>
+<main class="wrap" id="app"><div class="loading">試合データを読み込んでいます…</div></main>
+
+<script src="assets/core.js"></script>
+<script>
+(async function(){
+  const app=document.getElementById('app');
+  WL.topbar();
+  const id=+WL.qs.get('id');
+  if(!id){app.innerHTML='<div class="err">試合が指定されていません。<a href="./">トップページ</a>から試合を選んでください。</div>';return;}
+  let G;
+  try{G=await WL.loadGame(id);}catch(e){WL.showError(app,e);return;}
+  const {T,F,tot}=G, H=T.H, A=T.A, esc=WL.esc, f1=WL.f1;
+  document.title=`${H.short} ${H.score}-${A.score} ${A.short} | Wリーグ FUTURE 分析`;
+  document.documentElement.style.setProperty('--home',H.color);
+  document.documentElement.style.setProperty('--away',A.color);
+  const qLabels=Array.from({length:G.maxP},(_,i)=>i<4?`${i+1}Q`:`OT${i-3}`);
+  const clock=t=>WL.fmtClock(t,G.maxP);
+
+  /* ---- key points (自動生成) ---- */
+  const pts=[];
+  const k=H.score>A.score?'H':'A', o=k==='H'?'A':'H', W=T[k], L=T[o];
+  // 1) 最大のラン
+  const run=G.bigRuns[0];
+  if(run){const rt=T[run.k];pts.push([`${run.pts}-0`,`${esc(rt.short)}のラン`,`${clock(run.from)}〜${clock(run.e)}、${esc(rt.short)}が${run.pts}点連取（${run.startH}-${run.startA} → ${run.endH}-${run.endA}）。`,run.k]);}
+  // 2) 4Q / 終盤の逆転
+  const after3={H:H.qs.slice(0,3).reduce((a,b)=>a+b,0),A:A.qs.slice(0,3).reduce((a,b)=>a+b,0)};
+  if(G.maxP>=4){const lead3=after3.H===after3.A?null:(after3.H>after3.A?'H':'A');
+    const q4={H:H.qs.slice(3).reduce((a,b)=>a+b,0),A:A.qs.slice(3).reduce((a,b)=>a+b,0)};
+    if(lead3&&lead3!==k)pts.push([`${q4[k]}-${q4[o]}`,'4Q以降',`3Q終了時は${esc(T[lead3].short)}が${after3[lead3]}-${after3[k]}でリード。4Q以降を${q4[k]}-${q4[o]}で${esc(W.short)}が逆転しました。`,k]);
+    else if(Math.abs(q4.H-q4.A)>=8){const b=q4.H>q4.A?'H':'A';pts.push([`${q4[b]}-${q4[b==='H'?'A':'H']}`,'4Q以降',`4Q以降は${esc(T[b].short)}が${Math.abs(q4.H-q4.A)}点上回りました。`,b]);}}
+  // 3) 3P差
+  const p3={H:tot.H.p3m*3,A:tot.A.p3m*3};
+  if(Math.abs(p3.H-p3.A)>=9){const b=p3.H>p3.A?'H':'A',c=b==='H'?'A':'H';pts.push([`${p3[b]}-${p3[c]}`,'3P得点',`3Pは${esc(T[b].short)}が${tot[b].p3m}/${tot[b].p3a}、${esc(T[c].short)}が${tot[c].p3m}/${tot[c].p3a}。`,b]);}
+  // 4) ターンオーバー
+  if(Math.abs(tot.H.to-tot.A.to)>=6){const b=tot.H.to>tot.A.to?'H':'A',c=b==='H'?'A':'H';pts.push([`${tot[b].to}`,`${esc(T[b].short)} TO`,`${esc(T[b].short)}のターンオーバーは${tot[b].to}（TO率${f1(F[b].tov)}%）。${esc(T[c].short)}はそこから${G.ptsOffTO[c]}点を挙げました。`,b]);}
+  // 5) リバウンド
+  if(Math.abs(tot.H.off-tot.A.off)>=6){const b=tot.H.off>tot.A.off?'H':'A',c=b==='H'?'A':'H';pts.push([`${tot[b].off}-${tot[c].off}`,'OREB',`オフェンスリバウンドは${esc(T[b].short)}が${tot[b].off}本（OREB% ${f1(F[b].orb)}%）。セカンドチャンス得点は${G.second[b]}-${G.second[c]}。`,b]);}
+  // 6) 無得点時間
+  for(const kk of ['H','A']){const d=G.drought[kk];if(d.len>=300)pts.push([WL.mmss(d.len),`${esc(T[kk].short)} FGなし`,`${clock(d.from)}〜${clock(d.to)}の間、${esc(T[kk].short)}はフィールドゴールが決まりませんでした。`,kk]);}
+  // 7) リード時間
+  const lt=G.leadTime;pts.push([WL.mmss(Math.max(lt.H,lt.A)),`${esc(T[lt.H>=lt.A?'H':'A'].short)}のリード時間`,`リード時間は${esc(H.short)} ${WL.mmss(lt.H)}、${esc(A.short)} ${WL.mmss(lt.A)}、同点 ${WL.mmss(lt.T)}。リード交代${G.lc}回、同点${G.ties}回。`,lt.H>=lt.A?'H':'A']);
+  const keyPts=pts.slice(0,5);
+
+  /* ---- layout ---- */
+  app.innerHTML=`
+  <header>
+    <div class="meta"><span>${esc(G.info.date)}</span><span>${esc(G.info.season)}</span><span>${esc(G.info.venue)}</span></div>
+    <div class="board">
+      <div class="team"><span class="nm" style="color:var(--home)">${WL.teamLink(H.id,H.name)}</span><span class="sub">HOME</span></div>
+      <div class="mid"><div class="score"><span style="color:var(--home)">${H.score}</span><span class="dash">–</span><span style="color:var(--away)">${A.score}</span></div><div class="final">FINAL${G.maxP>4?' / OT':''}</div></div>
+      <div class="team away"><span class="nm" style="color:var(--away)">${WL.teamLink(A.id,A.name)}</span><span class="sub">AWAY</span></div>
+    </div>
+    <div class="tblwrap"><table class="qt"><thead><tr><th></th>${qLabels.map(l=>`<th>${l}</th>`).join('')}<th>TOT</th></tr></thead><tbody>
+      ${['H','A'].map(kk=>`<tr><td style="color:var(--${kk==='H'?'home':'away'})">${esc(T[kk].short)}</td>${T[kk].qs.map(v=>`<td>${v}</td>`).join('')}<td><b>${T[kk].score}</b></td></tr>`).join('')}
+    </tbody></table></div>
+  </header>
+
+  <section><h2>試合のポイント<span class="en">Key Points</span></h2>
+    <ul class="points">${keyPts.map(([big,lab,txt,kk])=>`<li><div class="big" style="color:var(--${kk==='H'?'home':'away'})">${big}<small>${lab}</small></div><p>${txt}</p></li>`).join('')}</ul>
+    <p class="note">スタッツから自動で抽出しています。</p></section>
+
+  <section><h2>得点差の推移<span class="en">Game Flow</span></h2>
+    <div class="chart"><svg id="flow" role="img" aria-label="得点差の推移"></svg>
+    <div class="legend"><span><i class="sw" style="background:var(--home)"></i>上：${esc(H.short)}リード</span><span><i class="sw" style="background:var(--away)"></i>下：${esc(A.short)}リード</span><span><i class="sw" style="background:var(--hi)"></i>帯：6点以上のラン</span></div></div>
+    <div class="facts"><span>リード交代<b>${G.lc}</b></span><span>同点<b>${G.ties}</b></span><span>最大リード ${esc(H.short)}<b>${G.maxLead.H}</b></span><span>最大リード ${esc(A.short)}<b>${G.maxLead.A}</b></span><span>最長FGなし ${esc(H.short)}<b>${WL.mmss(G.drought.H.len)}</b></span><span>${esc(A.short)}<b>${WL.mmss(G.drought.A.len)}</b></span></div>
+  </section>
+
+  <section><h2>アドバンスドスタッツ<span class="en">Four Factors</span></h2><div id="factors"></div>
+    <p class="note">ポゼッション = FGA + 0.44×FTA − OREB + TO（${esc(H.short)} ${f1(F.H.poss)}／${esc(A.short)} ${f1(F.A.poss)}、Pace ${f1(G.pace)}）。ORtg は100ポゼッションあたり得点。太字が優位側。</p></section>
+
+  <section><h2>クォーター別スタッツ<span class="en">By Quarter</span></h2>
+    <div class="tblwrap"><table class="tbl"><thead><tr><th class="l"></th><th>得点</th><th>FG</th><th>FG%</th><th>3P</th><th>FT</th><th>OREB</th><th>DREB</th><th>TO</th></tr></thead><tbody id="qtab"></tbody></table></div></section>
+
+  <section><h2>得点の内訳<span class="en">Scoring</span></h2><div class="grid2">
+    <div class="card"><h3>得点の種類</h3>${['H','A'].map(kk=>{const t=tot[kk],c=kk==='H'?'home':'away';const p2=t.p2m*2,p3=t.p3m*3,ft=t.ftm;
+      return `<div style="font-size:.82rem;font-weight:700;color:var(--${c})">${esc(T[kk].short)} ${t.pts}</div><div class="stack">${p2?`<span style="flex:${p2};background:var(--${c})">2P ${p2}</span>`:''}${p3?`<span style="flex:${p3};background:color-mix(in srgb,var(--${c}) 65%,#000)">3P ${p3}</span>`:''}${ft?`<span style="flex:${ft};background:color-mix(in srgb,var(--${c}) 50%,var(--bg))">FT ${ft}</span>`:''}</div>`}).join('')}</div>
+    <div class="card"><h3>状況別の得点</h3><div class="kv" id="kv"></div><p class="note">TOからの得点・セカンドチャンスはプレイバイプレイから算出した参考値。</p></div>
+  </div></section>
+
+  <section><h2>ローテーション<span class="en">Rotation</span></h2>
+    <div class="seg" role="group" aria-label="色分け"><button type="button" id="mPm" aria-pressed="true">+/− で色分け</button><button type="button" id="mTeam" aria-pressed="false">チームカラー</button></div>
+    <div class="chart"><div class="tblwrap"><svg id="rot" role="img" aria-label="ローテーション" style="min-width:640px"></svg></div><div class="legend" id="rotLegend"></div></div>
+    ${G.minutesOk?'':'<p class="note">交代記録とボックススコアの出場時間に差があるため、+/− とローテーションは参考値です。</p>'}
+  </section>
+
+  <section><h2>ラインナップ別プラスマイナス<span class="en">Lineups</span></h2>
+    <div class="grid2">${['H','A'].map(kk=>`<div class="card"><h3 style="color:var(--${kk==='H'?'home':'away'})">${esc(T[kk].name)}</h3><div class="tblwrap"><table class="tbl lu" id="lu${kk}"></table></div></div>`).join('')}</div>
+    <p class="note">5人ユニットごとの出場時間と得失点。1分30秒未満のユニットは「その他」にまとめています。短い時間の数字は大きく振れるため傾向の参考に。</p></section>
+
+  <section><h2>ボックススコア<span class="en">Box Score</span></h2>
+    ${['H','A'].map(kk=>{const t=tot[kk],f=F[kk];return `<div class="boxhead"><h3 style="color:var(--${kk==='H'?'home':'away'});margin:0">${esc(T[kk].name)}</h3><span class="muted" style="font-size:.8rem">FG ${f.fgm}/${f.fga}（${f1(f.fg)}%）· 3P ${t.p3m}/${t.p3a} · FT ${t.ftm}/${t.fta}</span></div><div class="tblwrap"><table class="tbl box" id="box${kk}"></table></div>`}).join('')}
+    <p class="note">太字はスターター。+/− は交代記録から算出。</p></section>
+
+  <footer class="site">審判：${esc(G.info.refs.join('／'))}<br>データ出典：WJBL公式サイト（play_schedule_id=${G.id}）</footer>`;
+
+  /* ---- flow chart ---- */
+  (function(){
+    const svg=document.getElementById('flow');const W=900,Ht=300,Lp=40,R=12,Tp=16,B=30;
+    const md=Math.max(8,Math.ceil(Math.max(G.maxLead.H,G.maxLead.A)/4)*4);
+    svg.setAttribute('viewBox',`0 0 ${W} ${Ht}`);
+    const x=t=>Lp+(W-Lp-R)*t/G.gameLen,y=d=>Tp+(Ht-Tp-B)/2-(d/md)*(Ht-Tp-B)/2,el=(n,a,t)=>WL.svgEl(svg,n,a,t);
+    G.bigRuns.slice(0,4).forEach(r=>{el('rect',{x:x(r.from),y:Tp,width:Math.max(2,x(r.e)-x(r.from)),height:Ht-Tp-B,fill:'var(--hi)','fill-opacity':.18});
+      el('text',{x:(x(r.from)+x(r.e))/2,y:r.k==='H'?Tp+12:Ht-B-6,'text-anchor':'middle'},`${T[r.k].short} ${r.pts}-0`);});
+    const step=md/2;[-md,-step,0,step,md].forEach(d=>{el('line',{x1:Lp,x2:W-R,y1:y(d),y2:y(d),stroke:'var(--line)','stroke-dasharray':d?'3 4':''});el('text',{x:Lp-8,y:y(d)+4,'text-anchor':'end'},d>0?'+'+d:d);});
+    for(let p=2;p<=G.maxP;p++)el('line',{x1:x(WL.periodStart(p)),x2:x(WL.periodStart(p)),y1:Tp,y2:Ht-B,stroke:'var(--line)'});
+    qLabels.forEach((l,i)=>{const s=WL.periodStart(i+1),e=i+2<=G.maxP?WL.periodStart(i+2):G.gameLen;el('text',{x:x((s+e)/2),y:Ht-8,'text-anchor':'middle'},l);});
+    let pts=[[0,0]],d=0;G.timeline.forEach(ev=>{pts.push([ev.t,d]);d=ev.h-ev.a;pts.push([ev.t,d]);});pts.push([G.gameLen,d]);
+    const path=pts.map((p,i)=>(i?'L':'M')+x(p[0]).toFixed(1)+' '+y(p[1]).toFixed(1)).join(' ');
+    const area=path+` L${x(G.gameLen)} ${y(0)} L${x(0)} ${y(0)} Z`;
+    const defs=el('defs',{});const clip=(id,y1,y2)=>{const c=document.createElementNS('http://www.w3.org/2000/svg','clipPath');c.id=id;const r=document.createElementNS('http://www.w3.org/2000/svg','rect');r.setAttribute('x',0);r.setAttribute('y',y1);r.setAttribute('width',W);r.setAttribute('height',y2-y1);c.appendChild(r);defs.appendChild(c);};
+    clip('cu',0,y(0));clip('cd',y(0),Ht);
+    el('path',{d:area,fill:'var(--home)','fill-opacity':.25,'clip-path':'url(#cu)'});el('path',{d:area,fill:'var(--away)','fill-opacity':.25,'clip-path':'url(#cd)'});
+    el('path',{d:path,fill:'none',stroke:'var(--home)','stroke-width':2,'clip-path':'url(#cu)'});el('path',{d:path,fill:'none',stroke:'var(--away)','stroke-width':2,'clip-path':'url(#cd)'});
+    el('circle',{cx:x(G.gameLen),cy:y(d),r:4,fill:d>=0?'var(--home)':'var(--away)'});
+  })();
+
+  /* ---- factors ---- */
+  const FR=[['ORtg','100ポゼ当たり得点','ortg',1,''],['eFG%','実効FG%','efg',1,'%'],['TS%','真のシュート効率','ts',1,'%'],['TO%','ターンオーバー率','tov',0,'%'],['OREB%','オフェンスリバウンド率','orb',1,'%'],['FT Rate','FTA / FGA','ftr',1,'%'],['AST%','アシスト / FGM','astr',1,'%']];
+  document.getElementById('factors').innerHTML=FR.map(([lab,sub,key,good,u])=>{const h=F.H[key],a=F.A[key],m=Math.max(h,a,1)*1.1,hw=good?h>a:h<a,aw=good?a>h:a<h;
+    return `<div class="fr"><span class="v" style="color:var(--home)">${hw?'<b>':''}${f1(h)}${u}${hw?'</b>':''}</span><div class="bar l"><i style="width:${h/m*100}%;background:var(--home)"></i></div><div class="lab">${lab}<small>${sub}</small></div><div class="bar"><i style="width:${a/m*100}%;background:var(--away)"></i></div><span class="v r" style="color:var(--away)">${aw?'<b>':''}${f1(a)}${u}${aw?'</b>':''}</span></div>`}).join('');
+
+  /* ---- quarter table ---- */
+  document.getElementById('qtab').innerHTML=qLabels.map((l,i)=>{const Q=G.q[i+1];if(!Q)return'';
+    return `<tr><td class="t" colspan="9" style="background:var(--bg);font-family:var(--num);letter-spacing:.1em;color:var(--muted)">${l}</td></tr>`+['H','A'].map(kk=>{const s=Q[kk];return `<tr><td class="t" style="color:var(--${kk==='H'?'home':'away'});font-weight:700">${esc(T[kk].short)}</td><td><b>${s.pts}</b></td><td>${s.fgm}/${s.fga}</td><td>${f1(WL.pct(s.fgm,s.fga))}%</td><td>${s.p3m}/${s.p3a}</td><td>${s.ftm}/${s.fta}</td><td>${s.off}</td><td>${s.def}</td><td>${s.to}</td></tr>`}).join('')}).join('');
+
+  /* ---- situational ---- */
+  const kvRows=[['TOからの得点',G.ptsOffTO.H,G.ptsOffTO.A,1],['セカンドチャンス',G.second.H,G.second.A,1],['ベンチ得点',G.bench.H,G.bench.A,1],['アシスト',tot.H.ast,tot.A.ast,1],['スティール',tot.H.stl,tot.A.stl,1],['ブロック',tot.H.blk,tot.A.blk,1]];
+  document.getElementById('kv').innerHTML=`<span></span><span style="font-size:.75rem;text-align:right;color:var(--home)">${esc(H.short)}</span><span style="font-size:.75rem;text-align:right;color:var(--away)">${esc(A.short)}</span>`+
+    kvRows.map(([l,h,a])=>`<span>${l}</span><span class="num" style="${h>a?'font-weight:700;color:var(--home)':''}">${h}</span><span class="num" style="${a>h?'font-weight:700;color:var(--away)':''}">${a}</span>`).join('');
+
+  /* ---- rotation ---- */
+  let mode='pm';
+  function drawRot(){
+    const svg=document.getElementById('rot');svg.innerHTML='';const rows=[];
+    for(const kk of ['H','A']){rows.push({head:kk});T[kk].players.filter(p=>p.played).forEach(p=>rows.push({kk,p}));}
+    const W=900,Lp=168,R=56,Tp=26,rh=20,hh=26;let Ht=Tp;rows.forEach(r=>Ht+=r.head?hh:rh);Ht+=8;svg.setAttribute('viewBox',`0 0 ${W} ${Ht}`);
+    const x=t=>Lp+(W-Lp-R)*t/G.gameLen,el=(n,a,t)=>WL.svgEl(svg,n,a,t);
+    G.bigRuns.slice(0,4).forEach(r=>el('rect',{x:x(r.from),y:Tp-4,width:Math.max(2,x(r.e)-x(r.from)),height:Ht-Tp-4,fill:'var(--hi)','fill-opacity':.16}));
+    for(let p=1;p<=G.maxP+1;p++){const s=p<=G.maxP?WL.periodStart(p):G.gameLen;el('line',{x1:x(s),x2:x(s),y1:Tp-4,y2:Ht-6,stroke:'var(--line)'});}
+    qLabels.forEach((l,i)=>{const s=WL.periodStart(i+1),e=i+2<=G.maxP?WL.periodStart(i+2):G.gameLen;el('text',{x:x((s+e)/2),y:16,'text-anchor':'middle',class:'mono'},l);});
+    el('text',{x:W-6,y:16,'text-anchor':'end',class:'mono'},'MIN');
+    let y=Tp;
+    rows.forEach(r=>{
+      if(r.head){el('text',{x:4,y:y+18,style:`font-weight:700;fill:var(--${r.head==='H'?'home':'away'})`},T[r.head].short);y+=hh;return;}
+      const p=r.p;el('line',{x1:Lp,x2:W-R,y1:y+rh/2,y2:y+rh/2,stroke:'var(--line)','stroke-dasharray':'2 4'});
+      el('text',{x:4,y:y+14,class:'mono'},'#'+p.no);
+      const nm=p.name.length>11?p.name.slice(0,10)+'…':p.name;el('text',{x:30,y:y+14,style:p.gs?'font-weight:700':''},nm);
+      (p.stints||[]).forEach(st=>{const d=st.pf-st.pa,w=Math.max(2,x(st.e)-x(st.s));let fill,op;
+        if(mode==='pm'){fill=d>0?'var(--plus)':d<0?'var(--minus)':'var(--even)';op=d===0?1:Math.min(1,.4+Math.abs(d)*.09);}else{fill=r.kk==='H'?'var(--home)':'var(--away)';op=p.gs?1:.7;}
+        const rc=el('rect',{x:x(st.s),y:y+3,width:w,height:rh-6,rx:2,fill,'fill-opacity':op});
+        const ti=document.createElementNS('http://www.w3.org/2000/svg','title');ti.textContent=`${p.name}  ${clock(st.s)} → ${st.e>=G.gameLen?'終了':clock(st.e)}（${st.pf}-${st.pa}、+/− ${WL.signed(d)}）`;rc.appendChild(ti);
+        if(mode==='pm'&&w>=24&&d!==0)el('text',{x:x(st.s)+w/2,y:y+14,'text-anchor':'middle',style:'font-family:var(--num);font-size:11px;font-weight:600;fill:#fff;pointer-events:none'},WL.signed(d));});
+      el('text',{x:W-6,y:y+14,'text-anchor':'end',class:'mono'},p.min);y+=rh;});
+    document.getElementById('rotLegend').innerHTML=mode==='pm'?'<span><i class="sw" style="background:var(--plus)"></i>区間の得失点プラス</span><span><i class="sw" style="background:var(--minus)"></i>マイナス</span><span><i class="sw" style="background:var(--even)"></i>±0</span><span><i class="sw" style="background:var(--hi)"></i>帯：6点以上のラン</span><span>バーに触れると区間と得失点を表示</span>':'<span><i class="sw" style="background:var(--home)"></i>'+esc(H.short)+'</span><span><i class="sw" style="background:var(--away)"></i>'+esc(A.short)+'</span><span><i class="sw" style="background:var(--hi)"></i>帯：6点以上のラン</span>';
+  }
+  for(const [bid,m] of [['mPm','pm'],['mTeam','team']])document.getElementById(bid).addEventListener('click',()=>{mode=m;document.getElementById('mPm').setAttribute('aria-pressed',m==='pm');document.getElementById('mTeam').setAttribute('aria-pressed',m==='team');drawRot();});
+  drawRot();
+
+  /* ---- lineups ---- */
+  const pmCell=(d,max)=>{const w=Math.abs(d)/max*50,c=d>0?'var(--plus)':d<0?'var(--minus)':'var(--even)';return `<div class="pmc"><span class="pmb"><i style="${d>=0?'left:50%':'right:50%'};width:${d?w:0}%;background:${c}"></i></span><b style="color:${c};min-width:2.2em">${WL.signed(d)}</b></div>`;};
+  for(const kk of ['H','A']){
+    const names={};T[kk].players.forEach(p=>names[p.id]=WL.shortName(p.name));
+    const starters=T[kk].players.filter(p=>p.gs).map(p=>p.id).sort((a,b)=>a-b).join('-');
+    const list=G.lu[kk],main=list.filter(r=>r.sec>=90),rest=list.filter(r=>r.sec<90);
+    const max=Math.max(1,...list.map(r=>Math.abs(r.pf-r.pa)));
+    let h='<thead><tr><th class="l">ユニット</th><th>時間</th><th>得点</th><th>失点</th><th>+/−</th></tr></thead><tbody>';
+    main.forEach(r=>{h+=`<tr class="${r.key===starters?'st':''}"><td class="u">${r.key.split('-').map(i=>esc(names[i]||'?')).join('・')}${r.key===starters?' <span class="pill">スターター</span>':''}</td><td>${WL.mmss(r.sec)}</td><td>${r.pf}</td><td>${r.pa}</td><td>${pmCell(r.pf-r.pa,max)}</td></tr>`;});
+    if(rest.length){const s=rest.reduce((a,r)=>a+r.sec,0),f=rest.reduce((a,r)=>a+r.pf,0),a2=rest.reduce((a,r)=>a+r.pa,0);h+=`<tr><td class="u muted">その他 ${rest.length}ユニット</td><td>${WL.mmss(s)}</td><td>${f}</td><td>${a2}</td><td>${pmCell(f-a2,max)}</td></tr>`;}
+    document.getElementById('lu'+kk).innerHTML=h+'</tbody>';
+  }
+
+  /* ---- box ---- */
+  for(const kk of ['H','A']){
+    const t=T[kk];
+    let h='<thead><tr><th class="l">#</th><th class="l">選手</th><th>MIN</th><th>PTS</th><th>2P</th><th>3P</th><th>FT</th><th>OR</th><th>DR</th><th>REB</th><th>AST</th><th>STL</th><th>BLK</th><th>TO</th><th>PF</th><th>+/−</th></tr></thead><tbody>';
+    [...t.players].sort((a,b)=>(b.gs-a.gs)||(b.played-a.played)||(b.minSec-a.minSec)).forEach(p=>{
+      if(!p.played){h+=`<tr class="dnp"><td class="l">${esc(p.no)}</td><td class="nm">${esc(p.name)}</td><td colspan="14" class="t muted">出場なし</td></tr>`;return;}
+      const c=p.pm>0?'pos':p.pm<0?'neg':'';
+      h+=`<tr class="${p.gs?'st':''}"><td class="l muted">${esc(p.no)}</td><td class="nm">${esc(p.name)}</td><td>${p.min}</td><td><b>${p.pts}</b></td><td>${p.p2m}-${p.p2a}</td><td>${p.p3m}-${p.p3a}</td><td>${p.ftm}-${p.fta}</td><td>${p.off}</td><td>${p.def}</td><td>${p.tot}</td><td>${p.ast}</td><td>${p.stl}</td><td>${p.blk}</td><td>${p.to}</td><td>${p.f}</td><td class="${c}">${WL.signed(p.pm)}</td></tr>`;});
+    const x=t.total,tr=t.teamRow||{};
+    h+=`<tr class="tot"><td></td><td class="nm">合計<br><span class="muted" style="font-weight:400;font-size:.72rem">チーム：OREB ${tr.off||0} / DREB ${tr.def||0} / TO ${tr.to||0}</span></td><td>${x.min}</td><td>${x.pts}</td><td>${x.p2m}-${x.p2a}</td><td>${x.p3m}-${x.p3a}</td><td>${x.ftm}-${x.fta}</td><td>${x.off}</td><td>${x.def}</td><td>${x.tot}</td><td>${x.ast}</td><td>${x.stl}</td><td>${x.blk}</td><td>${x.to}</td><td>${x.f}</td><td></td></tr>`;
+    document.getElementById('box'+kk).innerHTML=h+'</tbody>';
+  }
+})();
+</script>
+</body>
+</html>
