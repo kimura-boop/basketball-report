@@ -70,15 +70,15 @@
     const q4={H:H.qs.slice(3).reduce((a,b)=>a+b,0),A:A.qs.slice(3).reduce((a,b)=>a+b,0)};
     if(lead3&&lead3!==k)pts.push([`${q4[k]}-${q4[o]}`,'4Q以降',`3Q終了時は${esc(T[lead3].short)}が${after3[lead3]}-${after3[k]}でリード。4Q以降を${q4[k]}-${q4[o]}で${esc(W.short)}が逆転しました。`,k]);
     else if(Math.abs(q4.H-q4.A)>=8){const b=q4.H>q4.A?'H':'A';pts.push([`${q4[b]}-${q4[b==='H'?'A':'H']}`,'4Q以降',`4Q以降は${esc(T[b].short)}が${Math.abs(q4.H-q4.A)}点上回りました。`,b]);}}
-  // 3) 3P差
+  // 3) FGが止まった時間
+  for(const kk of ['H','A']){const d=G.drought[kk];if(d.len>=300)pts.push([WL.mmss(d.len),`${esc(T[kk].short)} FGなし`,`${clock(d.from)}〜${clock(d.to)}の間、${esc(T[kk].short)}はフィールドゴールが決まりませんでした。`,kk]);}
+  // 4) 3P差
   const p3={H:tot.H.p3m*3,A:tot.A.p3m*3};
   if(Math.abs(p3.H-p3.A)>=9){const b=p3.H>p3.A?'H':'A',c=b==='H'?'A':'H';pts.push([`${p3[b]}-${p3[c]}`,'3P得点',`3Pは${esc(T[b].short)}が${tot[b].p3m}/${tot[b].p3a}、${esc(T[c].short)}が${tot[c].p3m}/${tot[c].p3a}。`,b]);}
   // 4) ターンオーバー
   if(Math.abs(tot.H.to-tot.A.to)>=6){const b=tot.H.to>tot.A.to?'H':'A',c=b==='H'?'A':'H';pts.push([`${tot[b].to}`,`${esc(T[b].short)} TO`,`${esc(T[b].short)}のターンオーバーは${tot[b].to}（TO率${f1(F[b].tov)}%）。${esc(T[c].short)}はそこから${G.ptsOffTO[c]}点を挙げました。`,b]);}
   // 5) リバウンド
   if(Math.abs(tot.H.off-tot.A.off)>=6){const b=tot.H.off>tot.A.off?'H':'A',c=b==='H'?'A':'H';pts.push([`${tot[b].off}-${tot[c].off}`,'OREB',`オフェンスリバウンドは${esc(T[b].short)}が${tot[b].off}本（OREB% ${f1(F[b].orb)}%）。セカンドチャンス得点は${G.second[b]}-${G.second[c]}。`,b]);}
-  // 6) 無得点時間
-  for(const kk of ['H','A']){const d=G.drought[kk];if(d.len>=300)pts.push([WL.mmss(d.len),`${esc(T[kk].short)} FGなし`,`${clock(d.from)}〜${clock(d.to)}の間、${esc(T[kk].short)}はフィールドゴールが決まりませんでした。`,kk]);}
   // 7) リード時間
   const lt=G.leadTime;pts.push([WL.mmss(Math.max(lt.H,lt.A)),`${esc(T[lt.H>=lt.A?'H':'A'].short)}のリード時間`,`リード時間は${esc(H.short)} ${WL.mmss(lt.H)}、${esc(A.short)} ${WL.mmss(lt.A)}、同点 ${WL.mmss(lt.T)}。リード交代${G.lc}回、同点${G.ties}回。`,lt.H>=lt.A?'H':'A']);
   const keyPts=pts.slice(0,5);
