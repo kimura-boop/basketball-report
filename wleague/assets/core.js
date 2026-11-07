@@ -64,7 +64,9 @@
       time: g.game_start_time || '',
       venue: g.venue || '',
       status: g.game_status,
-      final: g.game_status === 'fixed' && g.box_flg === 1,
+      // 'ended' = 試合終了・公式記録の確定前（速報）、'fixed' = 確定
+      final: (g.game_status === 'fixed' || g.game_status === 'ended') && g.box_flg === 1,
+      provisional: g.game_status === 'ended',
       ot: !!g.ot_flg,
       home: { id: g.home_team_id, short: g.home_season_team_short_name, score: g.home_team_score },
       away: { id: g.away_team_id, short: g.away_season_team_short_name, score: g.away_team_score }
@@ -73,7 +75,7 @@
 
   // 1試合分の生データ（キャッシュ優先）
   async function loadGameRaw(id) {
-    try { return await getJSON(`data/games/${id}.json`); } catch (e) { /* fall through */ }
+    try { return await getJSON(`data/games/${id}.json`); } catch (e) { /* 確定前の試合や未保存の試合は公式データから */ }
     const [info, box, pbp] = await Promise.all([
       getJSON(`${API}/play-schedule?play_schedule_id=${id}`),
       getJSON(`${API}/boxscore?play_schedule_id=${id}`),
@@ -294,7 +296,7 @@
     return {
       id: raw.id, info: {
         date: info.game_date, start: info.game_start_time, venue: info.venue, address: info.venue_address,
-        season: info.season_full_name, refs: [info.referee_name, info.sub_referee_name1, info.sub_referee_name2].filter(Boolean)
+        season: info.season_full_name, provisional: info.game_status !== 'fixed', refs: [info.referee_name, info.sub_referee_name1, info.sub_referee_name2].filter(Boolean)
       },
       T, tot, F, pace, maxP, gameLen, timeline, q, lc, ties, maxLead, maxLeadAt, leadTime, runs, bigRuns, drought,
       ptsOffTO, second, bench, lu, minutesOk
@@ -327,7 +329,7 @@
       addTot(sum.for, g.tot[k]); addTot(sum.against, g.tot[o]);
       sum.poss += g.F[k].poss; sum.oposs += g.F[o].poss; sum.sec += g.gameLen;
       log.push({
-        id: g.id, date: g.info.date, ha: k, opp: g.T[o], pf: g.T[k].score, pa: g.T[o].score, win,
+        id: g.id, date: g.info.date, provisional: g.info.provisional, ha: k, opp: g.T[o], pf: g.T[k].score, pa: g.T[o].score, win,
         F: g.F[k], oF: g.F[o], pace: g.pace, qs: g.T[k].qs, oqs: g.T[o].qs,
         pot: g.ptsOffTO[k], opot: g.ptsOffTO[o], sc: g.second[k], osc: g.second[o], bench: g.bench[k], obench: g.bench[o]
       });

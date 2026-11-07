@@ -89,13 +89,15 @@
     <div class="meta"><span>${esc(G.info.date)}</span><span>${esc(G.info.season)}</span><span>${esc(G.info.venue)}</span></div>
     <div class="board">
       <div class="team"><span class="nm" style="color:var(--home)">${WL.teamLink(H.id,H.name)}</span><span class="sub">HOME</span></div>
-      <div class="mid"><div class="score"><span style="color:var(--home)">${H.score}</span><span class="dash">–</span><span style="color:var(--away)">${A.score}</span></div><div class="final">FINAL${G.maxP>4?' / OT':''}</div></div>
+      <div class="mid"><div class="score"><span style="color:var(--home)">${H.score}</span><span class="dash">–</span><span style="color:var(--away)">${A.score}</span></div><div class="final">${G.info.provisional?'<span style="color:var(--minus);font-weight:700;letter-spacing:.1em">速報</span>':'FINAL'}${G.maxP>4?' / OT':''}</div></div>
       <div class="team away"><span class="nm" style="color:var(--away)">${WL.teamLink(A.id,A.name)}</span><span class="sub">AWAY</span></div>
     </div>
     <div class="tblwrap"><table class="qt"><thead><tr><th></th>${qLabels.map(l=>`<th>${l}</th>`).join('')}<th>TOT</th></tr></thead><tbody>
       ${['H','A'].map(kk=>`<tr><td style="color:var(--${kk==='H'?'home':'away'})">${esc(T[kk].short)}</td>${T[kk].qs.map(v=>`<td>${v}</td>`).join('')}<td><b>${T[kk].score}</b></td></tr>`).join('')}
     </tbody></table></div>
   </header>
+
+  ${G.info.provisional?'<div class="err" style="border-color:var(--minus)"><b>速報</b>：試合終了直後の記録で、公式記録の確定前です。確定時に数字が修正される場合があります。確定後は自動で反映されます。</div>':''}
 
   <section><h2>試合のポイント<span class="en">Key Points</span></h2>
     <ul class="points">${keyPts.map(([big,lab,txt,kk])=>`<li><div class="big" style="color:var(--${kk==='H'?'home':'away'})">${big}<small>${lab}</small></div><p>${txt}</p></li>`).join('')}</ul>

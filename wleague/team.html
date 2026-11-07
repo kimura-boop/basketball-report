@@ -109,7 +109,7 @@
 
   /* game log */
   document.getElementById('log').innerHTML='<thead><tr><th class="l">日付</th><th class="l">対戦</th><th class="l">結果</th><th>ORtg</th><th>DRtg</th><th>Pace</th><th>eFG%</th><th>TO%</th><th>OREB%</th><th>FT Rate</th><th>3P%</th></tr></thead><tbody>'+
-    A.log.map(g=>`<tr class="link" onclick="location.href='game.html?id=${g.id}'"><td class="t">${esc(g.date.replace(/^\d+年/,''))}</td><td class="t">${g.ha==='H'?'vs':'@'} ${WL.teamLink(g.opp.id,g.opp.short)}</td><td class="t"><span class="${g.win?'w':'lo'}">${g.win?'○':'●'}</span> <span class="num">${g.pf}-${g.pa}</span></td><td>${f1(g.F.ortg)}</td><td>${f1(g.oF.ortg)}</td><td>${f1(g.pace)}</td><td>${f1(g.F.efg)}</td><td>${f1(g.F.tov)}</td><td>${f1(g.F.orb)}</td><td>${f1(g.F.ftr)}</td><td>${f1(g.F.p3)}%</td></tr>`).join('')+'</tbody>';
+    A.log.map(g=>`<tr class="link" onclick="location.href='game.html?id=${g.id}'"><td class="t">${esc(g.date.replace(/^\d+年/,''))}</td><td class="t">${g.ha==='H'?'vs':'@'} ${WL.teamLink(g.opp.id,g.opp.short)}</td><td class="t"><span class="${g.win?'w':'lo'}">${g.win?'○':'●'}</span> <span class="num">${g.pf}-${g.pa}</span>${g.provisional?' <span class="pill" style="color:var(--minus)">速報</span>':''}</td><td>${f1(g.F.ortg)}</td><td>${f1(g.oF.ortg)}</td><td>${f1(g.pace)}</td><td>${f1(g.F.efg)}</td><td>${f1(g.F.tov)}</td><td>${f1(g.F.orb)}</td><td>${f1(g.F.ftr)}</td><td>${f1(g.F.p3)}%</td></tr>`).join('')+'</tbody>';
 
   /* quarter chart */
   (function(){const svg=document.getElementById('qchart');const W=420,Ht=230,L=34,R=10,T=14,B=28;svg.setAttribute('viewBox',`0 0 ${W} ${Ht}`);const el=(nm,a,t)=>WL.svgEl(svg,nm,a,t);

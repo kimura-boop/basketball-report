@@ -23,6 +23,8 @@ a.gm:hover{background:var(--soft)}
 .gm .a{justify-content:flex-end;text-align:right}
 .gm .sc{font-family:var(--num);font-weight:700;font-size:1.25rem;white-space:nowrap}
 .gm .win{font-weight:700}
+.gm .sc{text-align:center;line-height:1.15}
+.flash{display:block;font-family:var(--body);font-size:.66rem;font-weight:700;color:var(--minus);letter-spacing:.08em}
 .gm .vs{font-family:var(--num);color:var(--muted);font-size:.9rem;text-align:center;line-height:1.2}
 .gm .vs small{display:block;font-size:.72rem}
 .streak{font-family:var(--num);letter-spacing:.06em}
@@ -49,7 +51,7 @@ a.gm:hover{background:var(--soft)}
   const card=g=>{
     const hw=g.final&&g.home.score>g.away.score,aw=g.final&&g.away.score>g.home.score;
     const side=(t,w,cls)=>`<span class="${cls}${w?' win':''}"><i class="dot" style="background:${(C[t.id]||{}).color||'#999'}"></i>${esc(t.short)}</span>`;
-    const mid=g.final?`<span class="sc">${g.home.score} - ${g.away.score}</span>`:`<span class="vs">${esc(g.time)}<small>${esc(g.venue)}</small></span>`;
+    const mid=g.final?`<span class="sc">${g.home.score} - ${g.away.score}${g.provisional?'<small class="flash">速報</small>':''}</span>`:`<span class="vs">${esc(g.time)}<small>${esc(g.venue)}</small></span>`;
     const inner=side(g.home,hw,'h')+mid+side(g.away,aw,'a').replace('<span class="a','<span class="a');
     return g.final?`<a class="gm" href="game.html?id=${g.id}" aria-label="${esc(g.home.short)} 対 ${esc(g.away.short)} のレポート">${inner}</a>`:`<div class="gm">${inner}</div>`;
   };
@@ -71,7 +73,7 @@ a.gm:hover{background:var(--soft)}
   <section><h2>今後の試合<span class="en">Upcoming</span></h2>
     ${upcoming.length?upcoming.map(([d,gs])=>`<div class="day"><h3>${dlabel(d,gs[0].wd)}</h3><div class="games">${gs.map(card).join('')}</div></div>`).join(''):'<p class="muted">予定されている試合はありません。</p>'}
   </section>
-  <footer class="site">データ出典：WJBL公式サイト。試合終了後、公式サイトにボックススコアとプレイバイプレイが公開されると自動で反映されます。</footer>`;
+  <footer class="site">データ出典：WJBL公式サイト。試合終了直後から「速報」として表示し、公式記録が確定すると自動で通常表示に切り替わります。</footer>`;
 })();
 </script>
 </body>
